@@ -5,7 +5,8 @@ const db = mysql.createConnection({
     user: "root",
     password: "root",
     database: "campus_event_db",
-    timezone: 'local'
+    timezone: 'local',
+    dateStrings: true
 });
 
 
