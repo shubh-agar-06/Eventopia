@@ -1,0 +1,38 @@
+body {
+  font-family: Arial;
+  padding: 20px;
+  background: #f5f7fb;
+}
+
+h2 {
+  text-align: center;
+}
+
+input {
+  padding: 10px;
+  width: 250px;
+  margin-bottom: 10px;
+}
+
+button {
+  padding: 8px 12px;
+  margin-left: 10px;
+}
+
+table {
+  width: 100%;
+  background: white;
+  border-collapse: collapse;
+}
+
+th {
+  background: #4e73df;
+  color: white;
+  padding: 10px;
+}
+
+td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+}

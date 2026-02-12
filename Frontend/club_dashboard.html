@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Club Dashboard</title>
+    <link rel="stylesheet" href="club_dashboard.css" />
+  </head>
+  <body>
+    <h2>Club Dashboard</h2>
+
+    <div class="card">
+      <h3>Create Event</h3>
+
+      <form id="eventForm">
+        <input type="text" id="eventName" placeholder="Event Name" required />
+
+        <textarea id="description" placeholder="Event Description"></textarea>
+
+        <input type="text" id="poster" placeholder="Poster Image Name / URL" />
+
+        <input type="date" id="eventDate" required />
+        <input type="time" id="eventTime" required />
+
+        <input type="text" id="venue" placeholder="Venue" required />
+
+        <input
+          type="number"
+          id="teamSize"
+          placeholder="Members per Team"
+          required
+          min="1"
+        />
+        <input
+          type="number"
+          id="maxTeams"
+          placeholder="Max Teams Allowed"
+          min="1"
+          required
+        />
+
+        <input
+          type="text"
+          id="eventCategory"
+          placeholder="Cultural/Technical/Others"
+          required
+        />
+
+        <input
+          type="number"
+          id="registrationFee"
+          placeholder="Registration Fee"
+        />
+        <input type="number" id="winningAmount" placeholder="Winning Amount" />
+
+        <input
+          type="text"
+          id="studentCoordinator"
+          placeholder="Student Coordinator"
+        />
+        <input
+          type="text"
+          id="facultyCoordinator"
+          placeholder="Faculty Coordinator"
+        />
+
+        <button type="submit">Create Event</button>
+      </form>
+
+      <p id="msg"></p>
+    </div>
+
+    <hr />
+
+    <h3>Your Events</h3>
+
+    <table id="eventTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Venue</th>
+          <th>Category</th>
+          <th>Fee</th>
+          <th>Prize</th>
+          <th>Edit</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <script src="club_dashboard.js"></script>
+  </body>
+</html>
