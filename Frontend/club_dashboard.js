@@ -57,6 +57,11 @@ function loadEvents() {
                       <td>${e.event_category}</td>
                       <td>${e.registration_fee}</td>
                       <td>${e.winning_amount}</td>
+                      <td>
+                        <button onclick="viewRegistrations(${e.event_id})">
+                            View Students
+                         </button>
+                    </td>
 
                       <td>
                         <button onclick="editEvent(${e.event_id}, '${e.event_name}', '${e.event_date.split('T')[0]}', '${e.venue}', '${e.event_category}', ${e.registration_fee}, ${e.winning_amount})">
@@ -74,6 +79,22 @@ function loadEvents() {
             });
         });
 }
+/*REGISTERED STUDENT*/
+function viewRegistrations(event_id) {
+    fetch(`http://localhost:3000/api/event-registrations/${event_id}`)
+        .then(res => res.json())
+        .then(data => {
+
+            let text = "Registered Students:\n\n";
+
+            data.forEach(s => {
+                text += s.reg_no + " - " + s.name + "\n";
+            });
+
+            alert(text || "No registrations yet");
+        });
+}
+
 
 /*DELETE EVENTS*/
 function deleteEvent(id) {

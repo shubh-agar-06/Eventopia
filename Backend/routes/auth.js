@@ -225,6 +225,22 @@ router.put("/update-event/:id", (req, res) => {
         res.json({ message: "Event updated successfully" });
     });
 });
+/* CLUB SEE STUDENT REGISTERED*/
+router.get("/event-registrations/:event_id", (req, res) => {
+    const event_id = req.params.event_id;
+
+    const sql = `
+        SELECT s.name, s.reg_no
+        FROM event_registration er
+        JOIN student s ON er.student_id = s.student_id
+        WHERE er.event_id = ?
+    `;
+
+    db.query(sql, [event_id], (err, results) => {
+        if (err) return res.json([]);
+        res.json(results);
+    });
+});
 
 /*STUDENT SEE EVENT*/
 router.get("/student-events/:college_id", (req, res) => {
@@ -248,14 +264,42 @@ router.get("/student-events/:college_id", (req, res) => {
 router.post("/register-event", (req, res) => {
     const { event_id, student_id } = req.body;
 
-    const sql = `
-        INSERT INTO event_registration (event_id, student_id)
-        VALUES (?, ?)
+    const checkSql = `
+        SELECT * FROM event_registration
+        WHERE event_id=? AND student_id=?
     `;
 
-    db.query(sql, [event_id, student_id], err => {
-        if (err) return res.json({ message: "Already registered or error" });
-        res.json({ message: "Registered successfully" });
+    db.query(checkSql, [event_id, student_id], (err, result) => {
+        if (result.length > 0) {
+            return res.json({ message: "Already registered for this event" });
+        }
+
+        const insertSql = `
+            INSERT INTO event_registration (event_id, student_id)
+            VALUES (?, ?)
+        `;
+
+        db.query(insertSql, [event_id, student_id], (err) => {
+            if (err) return res.json({ message: "Registration failed" });
+            res.json({ message: "Registered successfully!" });
+        });
+    });
+});
+/* Student View Registered events*/
+router.get("/my-registrations/:student_id", (req, res) => {
+    const student_id = req.params.student_id;
+
+    const sql = `
+        SELECT e.event_name, e.event_date, e.event_time, e.venue, c.club_name
+        FROM event_registration er
+        JOIN event e ON er.event_id = e.event_id
+        JOIN club c ON e.club_id = c.club_id
+        WHERE er.student_id = ?
+    `;
+
+    db.query(sql, [student_id], (err, results) => {
+        if (err) return res.json([]);
+        res.json(results);
     });
 });
 

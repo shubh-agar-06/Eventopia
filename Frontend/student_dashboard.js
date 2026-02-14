@@ -66,19 +66,48 @@ window.onload = function () {
         renderTable(todayEvents);
     }
 
-    /* REGISTER */
-    window.register = function (event_id) {
-        fetch("http://localhost:3000/api/register-event", {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({
-                event_id,
-                student_id
-            })
+/* REGISTER */
+window.register = function (event_id) {
+    fetch("http://localhost:3000/api/register-event", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+            event_id,
+            student_id
         })
-        .then(res => res.json())
-        .then(data => alert(data.message));
-    }
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
 
-    loadEvents();
-};
+        // Update registered events instantly
+        loadMyRegistrations();
+    });
+}
+
+/* SHOW REGISTERED EVENTS */
+function loadMyRegistrations() {
+    fetch(`http://localhost:3000/api/my-registrations/${student_id}`)
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.querySelector("#myEvents tbody");
+            tbody.innerHTML = "";
+
+            data.forEach((e, index) => {
+                tbody.innerHTML += `
+                <tr>
+                  <td>${index+1}</td>
+                  <td>${e.event_name}</td>
+                  <td>${e.club_name}</td>
+                  <td>${e.event_date.split('T')[0]}</td>
+                  <td>${e.event_time.substring(0,5)}</td>
+                  <td>${e.venue}</td>
+                </tr>`;
+            });
+        });
+}
+
+/* INITIAL LOAD */
+loadEvents();
+loadMyRegistrations();
+}
