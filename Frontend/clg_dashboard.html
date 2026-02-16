@@ -2,18 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>College Dashboard</title>
     <link rel="stylesheet" href="clg_dashboard.css" />
   </head>
+
   <body>
     <h2>College Dashboard</h2>
 
+    <!-- TOP SECTION (FORMS ONLY) -->
     <div class="container">
       <!-- Add Club -->
       <div class="card">
         <h3>Add Club</h3>
         <form id="clubForm">
           <input type="text" id="clubName" placeholder="Club Name" required />
+          <input
+            type="email"
+            id="clubEmail"
+            placeholder="Club Email"
+            required
+          />
           <input
             type="password"
             id="clubPassword"
@@ -42,6 +51,18 @@
             required
           />
           <input
+            type="email"
+            id="studentEmail"
+            placeholder="Student Email"
+            required
+          />
+          <input
+            type="number"
+            id="yearOfGrad"
+            placeholder="Year of Graduation (e.g. 2027)"
+            required
+          />
+          <input
             type="password"
             id="studentPassword"
             placeholder="Password"
@@ -52,10 +73,9 @@
         <p id="studentMsg"></p>
       </div>
     </div>
-
-    <hr />
-    <!-- display clubs-->
-    <h3>Clubs</h3>
+    <br />
+    <!-- CLUB TABLE -->
+    <h3>CLUBS</h3>
     <table id="clubTable">
       <thead>
         <tr>
@@ -66,8 +86,9 @@
       </thead>
       <tbody></tbody>
     </table>
-    <!-- display students-->
-    <h3>Students</h3>
+
+    <!-- STUDENT TABLE -->
+    <h3>STUDENTS</h3>
     <table id="studentTable">
       <thead>
         <tr>

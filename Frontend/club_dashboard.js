@@ -26,8 +26,9 @@ document.getElementById("eventForm").addEventListener("submit", e => {
             event_category: eventCategory.value,
             registration_fee: registrationFee.value,
             winning_amount: winningAmount.value,
-            student_coordinator: studentCoordinator.value,
-            faculty_coordinator: facultyCoordinator.value
+            student_coordinator_name: studentCoordinatorName.value,
+            student_coordinator_contact: studentCoordinatorContact.value,
+            faculty_coordinator_name: facultyCoordinatorName.value
         })
     })
     .then(res => res.json())

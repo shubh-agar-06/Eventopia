@@ -3,6 +3,7 @@
   <head>
     <title>Club Dashboard</title>
     <link rel="stylesheet" href="club_dashboard.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   </head>
   <body>
     <h2>Club Dashboard</h2>
@@ -29,6 +30,7 @@
           required
           min="1"
         />
+
         <input
           type="number"
           id="maxTeams"
@@ -49,17 +51,25 @@
           id="registrationFee"
           placeholder="Registration Fee"
         />
+
         <input type="number" id="winningAmount" placeholder="Winning Amount" />
 
         <input
           type="text"
-          id="studentCoordinator"
-          placeholder="Student Coordinator"
+          id="studentCoordinatorName"
+          placeholder="Student Coordinator Name"
         />
+
         <input
           type="text"
-          id="facultyCoordinator"
-          placeholder="Faculty Coordinator"
+          id="studentCoordinatorContact"
+          placeholder="Student Coordinator Contact Number"
+        />
+
+        <input
+          type="text"
+          id="facultyCoordinatorName"
+          placeholder="Faculty Coordinator Name"
         />
 
         <button type="submit">Create Event</button>

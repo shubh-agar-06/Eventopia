@@ -16,7 +16,8 @@ document.getElementById("clubForm").addEventListener("submit", e => {
         body: JSON.stringify({
             college_id,
             club_name: clubName.value,
-            password: clubPassword.value
+            password: clubPassword.value,
+            club_email: clubEmail.value
         })
     })
     .then(res => res.json())
@@ -26,6 +27,7 @@ document.getElementById("clubForm").addEventListener("submit", e => {
         clubForm.reset();
     });
 });
+
 
 /* ---------- ADD STUDENT ---------- */
 document.getElementById("studentForm").addEventListener("submit", e => {
@@ -38,6 +40,8 @@ document.getElementById("studentForm").addEventListener("submit", e => {
             college_id,
             reg_no: regNo.value,
             name: studentName.value,
+            email: studentEmail.value,
+            year_of_grad: yearOfGrad.value,
             password: studentPassword.value
         })
     })

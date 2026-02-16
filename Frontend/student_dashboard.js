@@ -33,6 +33,7 @@ window.onload = function () {
               <td>${e.event_name}</td>
               <td>${e.club_name}</td>
               <td>${e.event_date.split('T')[0]}</td>
+              <td>${e.event_time.substring(0,5)}</td>
               <td>${e.venue}</td>
               <td>
                 <button onclick="register(${e.event_id})">

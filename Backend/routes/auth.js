@@ -10,7 +10,7 @@ router.post("/login", (req, res) => {
     let params = [];
 
     if (role === "college") {
-        query = "SELECT * FROM college WHERE email = ? AND password = ?";
+        query = "SELECT * FROM college WHERE clg_email = ? AND password = ?";
         params = [username, password];
     }
     else if (role === "club") {
@@ -59,27 +59,35 @@ router.post("/login", (req, res) => {
 
 /* CLG ADD CLUB */
 router.post("/add-club", (req, res) => {
-    const { college_id, club_name, password } = req.body;
+    const { college_id, club_name, password, club_email } = req.body;
 
-    const sql = "INSERT INTO club (college_id, club_name, password) VALUES (?, ?, ?)";
+    const sql = `
+        INSERT INTO club (college_id, club_name, password, club_email)
+        VALUES (?, ?, ?, ?)
+    `;
 
-    db.query(sql, [college_id, club_name, password], (err) => {
+    db.query(sql, [college_id, club_name, password, club_email], (err) => {
         if (err) return res.json({ message: "Error adding club" });
         res.json({ message: "Club added successfully" });
     });
 });
 
+
 /* CLG ADD STUDENT */
 router.post("/add-student", (req, res) => {
-    const { college_id, reg_no, name, password } = req.body;
+    const { college_id, reg_no, name, email, year_of_grad, password } = req.body;
 
-    const sql = "INSERT INTO student (college_id, reg_no, name, password) VALUES (?, ?, ?, ?)";
+    const sql = `
+        INSERT INTO student (college_id, reg_no, name, email, year_of_grad, password)
+        VALUES (?, ?, ?, ?, ?, ?)
+    `;
 
-    db.query(sql, [college_id, reg_no, name, password], (err) => {
+    db.query(sql, [college_id, reg_no, name, email, year_of_grad, password], (err) => {
         if (err) return res.json({ message: "Error adding student" });
         res.json({ message: "Student added successfully" });
     });
 });
+
 /*CLG view club*/
 router.get("/clubs/:college_id", (req, res) => {
     const college_id = req.params.college_id;
@@ -145,30 +153,29 @@ router.post("/add-event", (req, res) => {
         event_category,
         registration_fee,
         winning_amount,
-        student_coordinator,
-        faculty_coordinator
+        student_coordinator_name,
+        student_coordinator_contact,
+        faculty_coordinator_name
     } = req.body;
 
     const sql = `
         INSERT INTO event 
         (club_id, event_name, description, poster, event_date, event_time, venue,
          team_size, max_teams, event_category, registration_fee, winning_amount,
-         student_coordinator, faculty_coordinator)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         student_coordinator_name, student_coordinator_contact, faculty_coordinator_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(sql, [
         club_id, event_name, description, poster, event_date, event_time, venue,
         team_size, max_teams, event_category, registration_fee, winning_amount,
-        student_coordinator, faculty_coordinator
+        student_coordinator_name, student_coordinator_contact, faculty_coordinator_name
     ], err => {
-        if (err) {
-            console.log(err);
-            return res.json({ message: "Error adding event" });
-        }
+        if (err) return res.json({ message: "Error adding event" });
         res.json({ message: "Event created successfully" });
     });
 });
+
 /*CLUB VIEW EVENTS*/
 router.get("/events/:club_id", (req, res) => {
     const club_id = req.params.club_id;
