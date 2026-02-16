@@ -40,6 +40,7 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
             localStorage.setItem("role", "student");
             localStorage.setItem("student_id", data.student_id);
             localStorage.setItem("college_id", data.college_id);
+            if (data.reg_no != null) localStorage.setItem("reg_no", data.reg_no);
             window.location.href = "student_dashboard.html";
 }
 

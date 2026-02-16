@@ -6,26 +6,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   </head>
   <body>
-    <h2>Student Dashboard</h2>
+    <header class="student-header">
+      <h2>Student Dashboard</h2>
+      <span class="student-reg-no" id="studentRegNo"></span>
+    </header>
 
     <input type="text" id="search" placeholder="Search event or club" />
 
-    <button onclick="showToday()">Today's Events</button>
+    <button type="button" onclick="showToday()">Today's Events</button>
 
-    <table id="eventTable">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Event</th>
-          <th>Club</th>
-          <th>Date</th>
-          <th>Time</th>
-          <th>Venue</th>
-          <th>Register</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="events-grid" id="eventsGrid"></div>
+
+    <div id="eventModal" class="modal">
+      <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <div id="eventModalBody"></div>
+      </div>
+    </div>
+
+    <!-- Register: Create or Join team -->
+    <div id="registerModal" class="modal">
+      <div class="modal-content register-modal-content">
+        <span class="modal-close" id="registerModalClose">&times;</span>
+        <h3 class="modal-title">Register for event</h3>
+        <p class="register-sub">Create a new team (you'll be leader) or join an existing team.</p>
+        <div class="register-tabs">
+          <button type="button" class="register-tab active" data-tab="create">Create team</button>
+          <button type="button" class="register-tab" data-tab="join">Join team</button>
+        </div>
+        <div id="registerCreate" class="register-panel">
+          <label>Team name (you will be team leader)</label>
+          <input type="text" id="registerTeamNameCreate" placeholder="Enter team name" />
+        </div>
+        <div id="registerJoin" class="register-panel" style="display:none">
+          <label>Team name (to join existing team)</label>
+          <input type="text" id="registerTeamNameJoin" placeholder="Enter team name" />
+        </div>
+        <button type="button" id="registerSubmitBtn" class="btn-register-submit">Register</button>
+      </div>
+    </div>
+
+    <!-- Team members modal (when student clicks team name) -->
+    <div id="teamMembersModal" class="modal">
+      <div class="modal-content">
+        <span class="modal-close" id="teamMembersModalClose">&times;</span>
+        <h3 class="modal-title" id="teamMembersModalTitle">Team members</h3>
+        <div id="teamMembersModalBody"></div>
+      </div>
+    </div>
 
     <h3>My Registered Events</h3>
 
@@ -38,6 +66,7 @@
           <th>Date</th>
           <th>Time</th>
           <th>Venue</th>
+          <th>Team</th>
         </tr>
       </thead>
       <tbody></tbody>

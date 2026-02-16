@@ -69,6 +69,17 @@ input:focus {
   outline: none;
 }
 
+/* Button row (Add + Import) */
+.button-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+.button-row button {
+  flex: 1;
+  width: auto;
+}
+
 /* BUTTONS */
 button {
   width: 100%;
@@ -94,6 +105,48 @@ button:hover {
   margin-top: 8px;
   font-size: 13px;
   color: #059669;
+}
+
+/* Table section: header + search */
+.table-section {
+  width: 95%;
+  margin: 10px auto 30px auto;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.section-header h3 {
+  margin: 0;
+}
+.search-bar {
+  min-width: 220px;
+  max-width: 320px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+.search-bar:focus {
+  border-color: #4f46e5;
+  outline: none;
+}
+.see-more {
+  display: none;
+  width: auto;
+  margin: 12px auto 25px auto;
+  padding: 10px 24px;
+  background: #e0e7ff;
+  color: #4f46e5;
+  font-weight: 600;
+}
+.see-more:hover {
+  background: #c7d2fe;
+  box-shadow: none;
 }
 
 /* TABLE SECTION TITLES */
@@ -153,6 +206,60 @@ tr:hover {
 @keyframes slideUp {
   from { transform: translateY(25px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+/* Modal – format popup */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  align-items: center;
+  justify-content: center;
+}
+.modal.show {
+  display: flex;
+}
+.modal-content {
+  background: white;
+  padding: 28px;
+  border-radius: 16px;
+  max-width: 480px;
+  width: 90%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  position: relative;
+}
+.modal-close {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+.modal-close:hover {
+  color: #111;
+}
+.modal-content h3 {
+  margin: 0 0 16px 0;
+  text-align: left;
+}
+.modal-content ul {
+  margin: 10px 0 16px 0;
+  padding-left: 22px;
+}
+.modal-content code {
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+#formatModalConfirm {
+  margin-top: 16px;
 }
 
 /* MOBILE RESPONSIVE */
