@@ -35,7 +35,12 @@
           </div>
         </form>
         <p id="clubMsg"></p>
-        <input type="file" id="clubFileInput" accept=".xlsx,.xls" style="display:none" />
+        <input
+          type="file"
+          id="clubFileInput"
+          accept=".xlsx,.xls"
+          style="display: none"
+        />
       </div>
 
       <!-- Add Student -->
@@ -74,11 +79,18 @@
           />
           <div class="button-row">
             <button type="submit">Add Student</button>
-            <button type="button" id="importStudentBtn">Import from Excel</button>
+            <button type="button" id="importStudentBtn">
+              Import from Excel
+            </button>
           </div>
         </form>
         <p id="studentMsg"></p>
-        <input type="file" id="studentFileInput" accept=".xlsx,.xls" style="display:none" />
+        <input
+          type="file"
+          id="studentFileInput"
+          accept=".xlsx,.xls"
+          style="display: none"
+        />
       </div>
     </div>
     <br />
@@ -89,7 +101,9 @@
         <span class="modal-close">&times;</span>
         <h3 id="formatModalTitle">Expected Excel Format</h3>
         <div id="formatModalBody"></div>
-        <button type="button" id="formatModalConfirm">Download format & choose file</button>
+        <button type="button" id="formatModalConfirm">
+          Download format & choose file
+        </button>
       </div>
     </div>
 
@@ -97,7 +111,12 @@
     <div class="table-section">
       <div class="section-header">
         <h3>CLUBS</h3>
-        <input type="text" id="clubSearch" class="search-bar" placeholder="Search by club name or email..." />
+        <input
+          type="text"
+          id="clubSearch"
+          class="search-bar"
+          placeholder="Search by Club Name or Email"
+        />
       </div>
       <table id="clubTable">
         <thead>
@@ -116,7 +135,12 @@
     <div class="table-section">
       <div class="section-header">
         <h3>STUDENTS</h3>
-        <input type="text" id="studentSearch" class="search-bar" placeholder="Search by name or registration number..." />
+        <input
+          type="text"
+          id="studentSearch"
+          class="search-bar"
+          placeholder="Search by Name or Reg No."
+        />
       </div>
       <table id="studentTable">
         <thead>
@@ -129,7 +153,9 @@
         </thead>
         <tbody></tbody>
       </table>
-      <button type="button" id="studentSeeMore" class="see-more">See more</button>
+      <button type="button" id="studentSeeMore" class="see-more">
+        See more
+      </button>
     </div>
 
     <script src="clg_dashboard.js"></script>

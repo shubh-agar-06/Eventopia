@@ -17,10 +17,24 @@
         <textarea id="description" placeholder="Event Description"></textarea>
 
         <label for="posterFile">Poster image (PNG, JPEG, JPG)</label>
-        <input type="file" id="posterFile" accept=".png,.jpg,.jpeg,image/png,image/jpeg" />
+        <input
+          type="file"
+          id="posterFile"
+          accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+        />
 
-        <input type="date" id="eventDate" required title="Date must be today or later" />
-        <input type="time" id="eventTime" required title="Time must be in the future if date is today" />
+        <input
+          type="date"
+          id="eventDate"
+          required
+          title="Date must be today or later"
+        />
+        <input
+          type="time"
+          id="eventTime"
+          required
+          title="Time must be in the future if date is today"
+        />
 
         <input type="text" id="venue" placeholder="Venue *" required />
 
@@ -108,7 +122,12 @@
       <div class="modal-content modal-content--table">
         <span class="modal-close" id="viewStudentsModalClose">&times;</span>
         <h3 class="modal-title">Registered Students (by team)</h3>
-        <input type="text" id="viewStudentsSearch" class="modal-search" placeholder="Search by Reg No or team name..." />
+        <input
+          type="text"
+          id="viewStudentsSearch"
+          class="modal-search"
+          placeholder="Search by Reg No or team name..."
+        />
         <div id="viewStudentsTeamwise"></div>
         <p id="viewStudentsEmpty" class="modal-empty">No registrations yet.</p>
       </div>
@@ -132,7 +151,13 @@
           <label>Venue *</label>
           <input type="text" id="editVenue" required />
           <label>Members per team (not editable)</label>
-          <input type="text" id="editTeamSize" readonly disabled class="input-readonly" />
+          <input
+            type="text"
+            id="editTeamSize"
+            readonly
+            disabled
+            class="input-readonly"
+          />
           <label>Max Teams Allowed</label>
           <input type="number" id="editMaxTeams" min="0" />
           <label>Type of event</label>
@@ -148,7 +173,13 @@
           <label>Student Coordinator Name</label>
           <input type="text" id="editStudentCoordinatorName" />
           <label>Student Coordinator Contact (10 digits if filled)</label>
-          <input type="text" id="editStudentCoordinatorContact" maxlength="10" pattern="[0-9]*" inputmode="numeric" />
+          <input
+            type="text"
+            id="editStudentCoordinatorContact"
+            maxlength="10"
+            pattern="[0-9]*"
+            inputmode="numeric"
+          />
           <label>Faculty Coordinator Name</label>
           <input type="text" id="editFacultyCoordinatorName" />
           <button type="submit">Save changes</button>

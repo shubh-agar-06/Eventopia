@@ -11,7 +11,7 @@
       <span class="student-reg-no" id="studentRegNo"></span>
     </header>
 
-    <input type="text" id="search" placeholder="Search event or club" />
+    <input type="text" id="search" placeholder="Search Event" />
 
     <button type="button" onclick="showToday()">Today's Events</button>
 
@@ -29,20 +29,40 @@
       <div class="modal-content register-modal-content">
         <span class="modal-close" id="registerModalClose">&times;</span>
         <h3 class="modal-title">Register for event</h3>
-        <p class="register-sub">Create a new team (you'll be leader) or join an existing team.</p>
+        <p class="register-sub">
+          Create a new team (you'll be leader) or join an existing team.
+        </p>
         <div class="register-tabs">
-          <button type="button" class="register-tab active" data-tab="create">Create team</button>
-          <button type="button" class="register-tab" data-tab="join">Join team</button>
+          <button type="button" class="register-tab active" data-tab="create">
+            Create team
+          </button>
+          <button type="button" class="register-tab" data-tab="join">
+            Join team
+          </button>
         </div>
         <div id="registerCreate" class="register-panel">
           <label>Team name (you will be team leader)</label>
-          <input type="text" id="registerTeamNameCreate" placeholder="Enter team name" />
+          <input
+            type="text"
+            id="registerTeamNameCreate"
+            placeholder="Enter team name"
+          />
         </div>
-        <div id="registerJoin" class="register-panel" style="display:none">
+        <div id="registerJoin" class="register-panel" style="display: none">
           <label>Team name (to join existing team)</label>
-          <input type="text" id="registerTeamNameJoin" placeholder="Enter team name" />
+          <input
+            type="text"
+            id="registerTeamNameJoin"
+            placeholder="Enter team name"
+          />
         </div>
-        <button type="button" id="registerSubmitBtn" class="btn-register-submit">Register</button>
+        <button
+          type="button"
+          id="registerSubmitBtn"
+          class="btn-register-submit"
+        >
+          Register
+        </button>
       </div>
     </div>
 
