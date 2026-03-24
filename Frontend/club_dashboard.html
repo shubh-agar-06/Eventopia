@@ -96,7 +96,7 @@
 
     <hr />
 
-    <h3>Your Events</h3>
+    <h3>Active Events</h3>
 
     <table id="eventTable">
       <thead>
@@ -111,6 +111,24 @@
           <th>Prize</th>
           <th>Registrations</th>
           <th>Edit</th>
+          <th>Completed</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h3>Past Events</h3>
+
+    <table id="pastEventTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Venue</th>
+          <th>Note</th>
+          <th>Edit Note</th>
           <th>Delete</th>
         </tr>
       </thead>
@@ -183,6 +201,23 @@
           <label>Faculty Coordinator Name</label>
           <input type="text" id="editFacultyCoordinatorName" />
           <button type="submit">Save changes</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="completionModal" class="modal">
+      <div class="modal-content modal-content--form">
+        <span class="modal-close" id="completionModalClose">&times;</span>
+        <h3 class="modal-title" id="completionModalTitle">Complete Event</h3>
+        <form id="completionForm">
+          <input type="hidden" id="completionEventId" />
+          <label for="completionNote">Note for students</label>
+          <textarea
+            id="completionNote"
+            rows="5"
+            placeholder="Add winners, highlights, or result details"
+          ></textarea>
+          <button type="submit" id="completionSubmitBtn">Save</button>
         </form>
       </div>
     </div>

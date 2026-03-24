@@ -27,6 +27,10 @@ window.onload = function () {
     function renderCards(events) {
         const grid = document.getElementById("eventsGrid");
         grid.innerHTML = "";
+        if (!events.length) {
+            grid.innerHTML = `<div class="empty-state">No active events found.</div>`;
+            return;
+        }
         events.forEach((e) => {
             const dateStr = e.event_date ? e.event_date.split("T")[0] : "";
             const timeStr = e.event_time ? String(e.event_time).substring(0, 5) : "";
@@ -89,8 +93,8 @@ window.onload = function () {
         fetch(`${API}/student-events/${college_id}`)
             .then((res) => res.json())
             .then((data) => {
-                allEvents = data;
-                renderCards(data);
+                allEvents = data.filter((e) => Number(e.is_completed) !== 1);
+                renderCards(allEvents);
             });
     }
 
@@ -201,9 +205,15 @@ window.onload = function () {
         fetch(`${API}/my-registrations/${student_id}`)
             .then((res) => res.json())
             .then((data) => {
-                const tbody = document.querySelector("#myEvents tbody");
-                tbody.innerHTML = "";
-                data.forEach((e, index) => {
+                const activeBody = document.querySelector("#myEvents tbody");
+                const pastBody = document.querySelector("#pastMyEvents tbody");
+                activeBody.innerHTML = "";
+                pastBody.innerHTML = "";
+
+                const activeRegistrations = data.filter((e) => Number(e.is_completed) !== 1);
+                const pastRegistrations = data.filter((e) => Number(e.is_completed) === 1);
+
+                activeRegistrations.forEach((e, index) => {
                     const dateStr = e.event_date ? e.event_date.split("T")[0] : "";
                     const timeStr = e.event_time ? String(e.event_time).substring(0, 5) : "";
                     let teamCell;
@@ -212,7 +222,7 @@ window.onload = function () {
                     } else {
                         teamCell = "-";
                     }
-                    tbody.innerHTML += `
+                    activeBody.innerHTML += `
                         <tr>
                             <td>${index + 1}</td>
                             <td>${escapeHtml(e.event_name)}</td>
@@ -223,7 +233,28 @@ window.onload = function () {
                             <td>${teamCell}</td>
                         </tr>`;
                 });
-                tbody.querySelectorAll(".btn-team-name").forEach((btn) => {
+                pastRegistrations.forEach((e, index) => {
+                    const dateStr = e.event_date ? e.event_date.split("T")[0] : "";
+                    const timeStr = e.event_time ? String(e.event_time).substring(0, 5) : "";
+                    let teamCell;
+                    if (e.team_name) {
+                        teamCell = `<button type="button" class="btn-team-name" data-event-id="${escapeHtml(String(e.event_id))}" data-team-name="${escapeHtml(e.team_name)}" data-event-name="${escapeHtml(e.event_name)}">${escapeHtml(e.team_name)}${e.is_leader ? " (Leader)" : ""}</button>`;
+                    } else {
+                        teamCell = "-";
+                    }
+                    pastBody.innerHTML += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${escapeHtml(e.event_name)}</td>
+                            <td>${escapeHtml(e.club_name)}</td>
+                            <td>${escapeHtml(dateStr)}</td>
+                            <td>${escapeHtml(timeStr)}</td>
+                            <td>${escapeHtml(e.venue)}</td>
+                            <td>${teamCell}</td>
+                            <td>${escapeHtml(e.completion_note || "-")}</td>
+                        </tr>`;
+                });
+                document.querySelectorAll("#myEvents .btn-team-name, #pastMyEvents .btn-team-name").forEach((btn) => {
                     btn.addEventListener("click", function () {
                         showTeamMembers(this.getAttribute("data-event-id"), this.getAttribute("data-team-name"), this.getAttribute("data-event-name"));
                     });

@@ -75,6 +75,16 @@ button:hover {
   max-width: 1200px;
 }
 
+.empty-state {
+  grid-column: 1 / -1;
+  background: white;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  color: #6b7280;
+}
+
 .event-card {
   background: white;
   border-radius: 12px;

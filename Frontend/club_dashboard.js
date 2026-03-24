@@ -128,9 +128,15 @@ function loadEvents() {
         .then(res => res.json())
         .then(data => {
             eventsCache = data;
-            const tbody = document.querySelector("#eventTable tbody");
-            tbody.innerHTML = "";
-            data.forEach((e, index) => {
+            const activeBody = document.querySelector("#eventTable tbody");
+            const pastBody = document.querySelector("#pastEventTable tbody");
+            activeBody.innerHTML = "";
+            pastBody.innerHTML = "";
+
+            const activeEvents = data.filter((e) => Number(e.is_completed) !== 1);
+            const pastEvents = data.filter((e) => Number(e.is_completed) === 1);
+
+            activeEvents.forEach((e, index) => {
                 const dateStr = e.event_date ? e.event_date.split("T")[0] : "";
                 const timeStr = e.event_time ? String(e.event_time).substring(0, 5) : "";
                 const row = document.createElement("tr");
@@ -145,12 +151,31 @@ function loadEvents() {
                     <td>${e.winning_amount != null ? escapeHtml(String(e.winning_amount)) : ""}</td>
                     <td><button type="button" class="btn-view-students">View Students</button></td>
                     <td><button type="button" class="btn-edit-event">Edit</button></td>
-                    <td><button type="button" class="btn-delete-event">Delete</button></td>
+                    <td><button type="button" class="btn-complete-event">Completed</button></td>
                 `;
                 row.querySelector(".btn-view-students").onclick = () => openViewStudentsModal(e.event_id);
                 row.querySelector(".btn-edit-event").onclick = () => openEditEventModal(e);
+                row.querySelector(".btn-complete-event").onclick = () => openCompletionModal(e, true);
+                activeBody.appendChild(row);
+            });
+
+            pastEvents.forEach((e, index) => {
+                const dateStr = e.event_date ? e.event_date.split("T")[0] : "";
+                const timeStr = e.event_time ? String(e.event_time).substring(0, 5) : "";
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${escapeHtml(e.event_name)}</td>
+                    <td>${escapeHtml(dateStr)}</td>
+                    <td>${escapeHtml(timeStr)}</td>
+                    <td>${escapeHtml(e.venue)}</td>
+                    <td class="note-cell">${escapeHtml(e.completion_note || "-")}</td>
+                    <td><button type="button" class="btn-edit-note">Edit Note</button></td>
+                    <td><button type="button" class="btn-delete-event">Delete</button></td>
+                `;
+                row.querySelector(".btn-edit-note").onclick = () => openCompletionModal(e, false);
                 row.querySelector(".btn-delete-event").onclick = () => deleteEvent(e.event_id);
-                tbody.appendChild(row);
+                pastBody.appendChild(row);
             });
         });
 }
@@ -272,7 +297,52 @@ document.getElementById("editEventModal").onclick = function (e) {
     if (e.target === this) this.classList.remove("show");
 };
 
-/* Delete event */
+function openCompletionModal(event, isCompleting) {
+    document.getElementById("completionEventId").value = event.event_id;
+    document.getElementById("completionNote").value = event.completion_note || "";
+    document.getElementById("completionModalTitle").textContent = isCompleting ? "Complete Event" : "Edit Past Event Note";
+    document.getElementById("completionSubmitBtn").textContent = isCompleting ? "Mark as completed" : "Update note";
+    document.getElementById("completionForm").dataset.mode = isCompleting ? "complete" : "edit-note";
+    document.getElementById("completionModal").classList.add("show");
+}
+
+document.getElementById("completionForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const eventId = document.getElementById("completionEventId").value;
+    const completion_note = document.getElementById("completionNote").value.trim();
+    const isCompleting = this.dataset.mode === "complete";
+    const endpoint = isCompleting ? "complete-event" : "event-note";
+
+    fetch(`http://localhost:3000/api/${endpoint}/${eventId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completion_note })
+    })
+        .then(async (res) => {
+            const raw = await res.text();
+            let data = {};
+            try {
+                data = raw ? JSON.parse(raw) : {};
+            } catch {
+                data = { message: raw || "Unexpected server response" };
+            }
+            return { ok: res.ok, data };
+        })
+        .then(({ ok, data }) => {
+            alert(data.message || (ok ? "Saved" : "Action failed"));
+            if (!ok) return;
+            document.getElementById("completionModal").classList.remove("show");
+            loadEvents();
+        })
+        .catch(() => alert("Could not reach the server while saving the event note."));
+});
+
+document.getElementById("completionModalClose").onclick = () =>
+    document.getElementById("completionModal").classList.remove("show");
+document.getElementById("completionModal").onclick = function (e) {
+    if (e.target === this) this.classList.remove("show");
+};
+
 function deleteEvent(id) {
     if (!confirm("Delete this event?")) return;
     fetch(`http://localhost:3000/api/delete-event/${id}`, { method: "DELETE" })

@@ -27,6 +27,36 @@ const posterUpload = multer({
     }
 });
 
+function ensureEventCompletionColumns() {
+    const additions = [
+        {
+            name: "is_completed",
+            sql: "ALTER TABLE event ADD COLUMN is_completed TINYINT(1) DEFAULT 0"
+        },
+        {
+            name: "completion_note",
+            sql: "ALTER TABLE event ADD COLUMN completion_note TEXT NULL"
+        }
+    ];
+
+    additions.forEach(({ name, sql }) => {
+        db.query("SHOW COLUMNS FROM event LIKE ?", [name], (checkErr, rows) => {
+            if (checkErr) {
+                console.error(`Could not inspect event.${name}:`, checkErr.message);
+                return;
+            }
+            if (rows && rows.length) return;
+            db.query(sql, (alterErr) => {
+                if (alterErr) {
+                    console.error(`Could not add event.${name}:`, alterErr.message);
+                }
+            });
+        });
+    });
+}
+
+ensureEventCompletionColumns();
+
 /* LOGIN */
 router.post("/login", (req, res) => {
     const { role, username, password } = req.body;
@@ -377,8 +407,9 @@ router.post("/add-event", (req, res, next) => {
             INSERT INTO event 
             (club_id, event_name, description, poster, event_date, event_time, venue,
              team_size, max_teams, event_category, registration_fee, winning_amount,
-             student_coordinator_name, student_coordinator_contact, faculty_coordinator_name)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             student_coordinator_name, student_coordinator_contact, faculty_coordinator_name,
+             is_completed, completion_note)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '')
         `;
         const teamSizeStr = String(team_size || "").trim();
         db.query(sql, [
@@ -400,7 +431,7 @@ router.get("/events/:club_id", (req, res) => {
     const club_id = req.params.club_id;
 
     db.query(
-        "SELECT * FROM event WHERE club_id = ? ORDER BY event_date",
+        "SELECT * FROM event WHERE club_id = ? ORDER BY is_completed, event_date, event_time",
         [club_id],
         (err, results) => {
             if (err) return res.json([]);
@@ -421,6 +452,35 @@ router.delete("/delete-event/:id", (req, res) => {
             res.json({ message: "Event deleted successfully" });
         });
     });
+});
+
+router.put("/complete-event/:id", (req, res) => {
+    const event_id = req.params.id;
+    const completion_note = (req.body.completion_note || "").trim();
+
+    db.query(
+        "UPDATE event SET is_completed = 1, completion_note = ? WHERE event_id = ?",
+        [completion_note, event_id],
+        (err) => {
+            if (err) return res.status(500).json({ message: "Could not mark event as completed" });
+            res.json({ message: "Event marked as completed" });
+        }
+    );
+});
+
+router.put("/event-note/:id", (req, res) => {
+    const event_id = req.params.id;
+    const completion_note = (req.body.completion_note || "").trim();
+
+    db.query(
+        "UPDATE event SET completion_note = ? WHERE event_id = ? AND is_completed = 1",
+        [completion_note, event_id],
+        (err, result) => {
+            if (err) return res.status(500).json({ message: "Could not update note" });
+            if (!result.affectedRows) return res.status(400).json({ message: "Only completed events can have notes updated" });
+            res.json({ message: "Past event note updated" });
+        }
+    );
 });
 
 /*club update event – all fields except team_size (members per team) */
@@ -529,6 +589,7 @@ router.get("/student-events/:college_id", (req, res) => {
         FROM event e
         JOIN club c ON e.club_id = c.club_id
         WHERE c.college_id = ?
+          AND COALESCE(e.is_completed, 0) = 0
         ORDER BY e.event_date
     `;
 
@@ -557,10 +618,13 @@ router.post("/register-event", (req, res) => {
             return res.json({ message: "Already registered for this event" });
         }
 
-        const getEvent = `SELECT max_teams, team_size FROM event WHERE event_id = ?`;
+        const getEvent = `SELECT max_teams, team_size, is_completed FROM event WHERE event_id = ?`;
         db.query(getEvent, [event_id], (err, eventRows) => {
             if (err || !eventRows.length) {
                 return res.status(400).json({ message: "Event not found" });
+            }
+            if (Number(eventRows[0].is_completed) === 1) {
+                return res.status(400).json({ message: "This event is already completed." });
             }
             const max_teams = parseInt(eventRows[0].max_teams, 10) || 999;
             const team_size_max = parseTeamSizeMax(eventRows[0].team_size);
@@ -610,11 +674,13 @@ router.post("/register-event", (req, res) => {
 router.get("/my-registrations/:student_id", (req, res) => {
     const student_id = req.params.student_id;
     const sql = `
-        SELECT er.event_id, e.event_name, e.event_date, e.event_time, e.venue, c.club_name, er.team_name, er.is_leader
+        SELECT er.event_id, e.event_name, e.event_date, e.event_time, e.venue, c.club_name,
+               er.team_name, er.is_leader, e.is_completed, e.completion_note
         FROM event_registration er
         JOIN event e ON er.event_id = e.event_id
         JOIN club c ON e.club_id = c.club_id
         WHERE er.student_id = ?
+        ORDER BY COALESCE(e.is_completed, 0), e.event_date, e.event_time
     `;
     db.query(sql, [student_id], (err, results) => {
         if (err) return res.json([]);
