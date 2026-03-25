@@ -57,6 +57,55 @@ function ensureEventCompletionColumns() {
 
 ensureEventCompletionColumns();
 
+/* REGISTER COLLEGE */
+router.post("/register-college", (req, res) => {
+    const {
+        college_name,
+        clg_email,
+        password,
+        address,
+        city,
+        state
+    } = req.body;
+
+    const name = String(college_name || "").trim();
+    const email = String(clg_email || "").trim().toLowerCase();
+    const rawPassword = String(password || "");
+    const addr = String(address || "").trim();
+    const cityName = String(city || "").trim();
+    const stateName = String(state || "").trim();
+
+    if (!name || !email || !rawPassword) {
+        return res.status(400).json({ message: "College name, email, and password are required" });
+    }
+
+    db.query("SELECT college_id FROM college WHERE clg_email = ?", [email], (checkErr, existing) => {
+        if (checkErr) {
+            return res.status(500).json({ message: "Database error" });
+        }
+
+        if (existing.length > 0) {
+            return res.status(409).json({ message: "A college with this email already exists" });
+        }
+
+        const sql = `
+            INSERT INTO college (college_name, clg_email, password, address, city, state)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `;
+
+        db.query(sql, [name, email, rawPassword, addr || null, cityName || null, stateName || null], (insertErr, result) => {
+            if (insertErr) {
+                return res.status(500).json({ message: "Could not register college" });
+            }
+
+            res.status(201).json({
+                message: "College registered successfully",
+                college_id: result.insertId
+            });
+        });
+    });
+});
+
 /* LOGIN */
 router.post("/login", (req, res) => {
     const { role, username, password } = req.body;

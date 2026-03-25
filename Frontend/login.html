@@ -30,7 +30,66 @@
         <button type="submit">Login</button>
       </form>
 
+      <button type="button" id="openCollegeRegister" class="secondary-btn">
+        Register College
+      </button>
+
       <p id="message"></p>
+    </div>
+
+    <div id="collegeRegisterModal" class="modal">
+      <div class="modal-content">
+        <button type="button" class="modal-close" id="closeCollegeRegister">
+          &times;
+        </button>
+        <h3>Register College</h3>
+
+        <form id="collegeRegisterForm">
+          <input
+            type="text"
+            id="collegeName"
+            placeholder="College Name"
+            maxlength="150"
+            required
+          />
+          <input
+            type="email"
+            id="collegeEmail"
+            placeholder="College Email"
+            maxlength="120"
+            required
+          />
+          <input
+            type="password"
+            id="collegePassword"
+            placeholder="Password"
+            maxlength="255"
+            required
+          />
+          <input
+            type="text"
+            id="collegeAddress"
+            placeholder="Address"
+            maxlength="255"
+          />
+          <input
+            type="text"
+            id="collegeCity"
+            placeholder="City"
+            maxlength="100"
+          />
+          <input
+            type="text"
+            id="collegeState"
+            placeholder="State"
+            maxlength="100"
+          />
+
+          <button type="submit">Create College Account</button>
+        </form>
+
+        <p id="collegeRegisterMessage"></p>
+      </div>
     </div>
 
     <script src="login.js"></script>
