@@ -2,6 +2,12 @@
 <html>
   <head>
     <title>Club Dashboard</title>
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icons/icon-192.png" type="image/png" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <link rel="stylesheet" href="club_dashboard.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   </head>
@@ -76,7 +82,7 @@
         <input
           type="text"
           id="studentCoordinatorContact"
-          placeholder="Student Coordinator Contact (10 digits if filled)"
+          placeholder="Student Coordinator Contact"
           maxlength="10"
           pattern="[0-9]*"
           inputmode="numeric"
@@ -222,6 +228,7 @@
       </div>
     </div>
 
+    <script src="pwa.js"></script>
     <script src="club_dashboard.js"></script>
   </body>
 </html>

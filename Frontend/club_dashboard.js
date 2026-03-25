@@ -96,7 +96,7 @@ eventForm.addEventListener("submit", e => {
     formData.append("faculty_coordinator_name", facultyCoordinatorName.value);
     if (posterFile.files.length > 0) formData.append("poster", posterFile.files[0]);
 
-    fetch("http://localhost:3000/api/add-event", {
+    fetch("/api/add-event", {
         method: "POST",
         body: formData
     })
@@ -125,7 +125,7 @@ function escapeHtml(str) {
 
 /* LOAD EVENTS */
 function loadEvents() {
-    fetch(`http://localhost:3000/api/events/${club_id}`)
+    fetch(`/api/events/${club_id}`)
         .then(res => res.json())
         .then(data => {
             eventsCache = data;
@@ -193,7 +193,7 @@ function openViewStudentsModal(event_id) {
     container.innerHTML = "<p>Loading...</p>";
     modal.classList.add("show");
     searchEl.value = "";
-    fetch(`http://localhost:3000/api/event-registrations/${event_id}/teamwise`)
+    fetch(`/api/event-registrations/${event_id}/teamwise`)
         .then((res) => res.json())
         .then((data) => {
             viewStudentsTeamwiseData = data.teams ? data : { teams: [] };
@@ -278,7 +278,7 @@ document.getElementById("editEventForm").addEventListener("submit", function (e)
         student_coordinator_contact: coordContact,
         faculty_coordinator_name: document.getElementById("editFacultyCoordinatorName").value
     };
-    fetch(`http://localhost:3000/api/update-event/${id}`, {
+    fetch(`/api/update-event/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -314,7 +314,7 @@ document.getElementById("completionForm").addEventListener("submit", function (e
     const isCompleting = this.dataset.mode === "complete";
     const endpoint = isCompleting ? "complete-event" : "event-note";
 
-    fetch(`http://localhost:3000/api/${endpoint}/${eventId}`, {
+    fetch(`/api/${endpoint}/${eventId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ completion_note })
@@ -346,7 +346,7 @@ document.getElementById("completionModal").onclick = function (e) {
 
 function deleteEvent(id) {
     if (!confirm("Delete this event?")) return;
-    fetch(`http://localhost:3000/api/delete-event/${id}`, { method: "DELETE" })
+    fetch(`/api/delete-event/${id}`, { method: "DELETE" })
         .then(res => res.json())
         .then(data => {
             alert(data.message);

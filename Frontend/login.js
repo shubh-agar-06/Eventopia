@@ -65,7 +65,7 @@ loginForm.addEventListener("submit", function (e) {
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value;
 
-    fetch("http://localhost:3000/api/login", {
+    fetch("/api/login", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -114,7 +114,7 @@ collegeRegisterForm.addEventListener("submit", function (e) {
         state: document.getElementById("collegeState").value.trim()
     };
 
-    fetch("http://localhost:3000/api/register-college", {
+    fetch("/api/register-college", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

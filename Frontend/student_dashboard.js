@@ -1,5 +1,5 @@
-const API = "http://localhost:3000/api";
-const UPLOADS = "http://localhost:3000/uploads/posters";
+const API = "/api";
+const UPLOADS = "/uploads/posters";
 
 window.onload = function () {
     const student_id = sessionStorage.getItem("student_id");
