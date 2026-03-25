@@ -2,17 +2,18 @@ const API = "http://localhost:3000/api";
 const UPLOADS = "http://localhost:3000/uploads/posters";
 
 window.onload = function () {
-    const student_id = localStorage.getItem("student_id");
-    const college_id = localStorage.getItem("college_id");
-    const role = localStorage.getItem("role");
+    const student_id = sessionStorage.getItem("student_id");
+    const college_id = sessionStorage.getItem("college_id");
+    const role = sessionStorage.getItem("role");
+    const isAuthenticated = sessionStorage.getItem("isAuthenticated");
 
-    if (!student_id || role !== "student") {
+    if (isAuthenticated !== "true" || !student_id || role !== "student") {
         alert("Unauthorized");
         window.location.href = "login.html";
         return;
     }
 
-    const reg_no = localStorage.getItem("reg_no") || "";
+    const reg_no = sessionStorage.getItem("reg_no") || "";
     document.getElementById("studentRegNo").textContent = reg_no ? "Reg No: " + reg_no : "";
 
     let allEvents = [];

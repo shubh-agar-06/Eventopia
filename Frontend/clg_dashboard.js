@@ -1,8 +1,9 @@
-const college_id = localStorage.getItem("college_id");
-const role = localStorage.getItem("role");
+const college_id = sessionStorage.getItem("college_id");
+const role = sessionStorage.getItem("role");
+const isAuthenticated = sessionStorage.getItem("isAuthenticated");
 const API = "http://localhost:3000/api";
 
-if (!college_id || role !== "college") {
+if (isAuthenticated !== "true" || !college_id || role !== "college") {
     alert("Unauthorized access");
     window.location.href = "login.html";
 }

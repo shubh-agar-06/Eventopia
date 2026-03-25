@@ -1,7 +1,8 @@
-const club_id = localStorage.getItem("club_id");
-const role = localStorage.getItem("role");
+const club_id = sessionStorage.getItem("club_id");
+const role = sessionStorage.getItem("role");
+const isAuthenticated = sessionStorage.getItem("isAuthenticated");
 
-if (!club_id || role !== "club") {
+if (isAuthenticated !== "true" || !club_id || role !== "club") {
     alert("Unauthorized access");
     window.location.href = "login.html";
 }
