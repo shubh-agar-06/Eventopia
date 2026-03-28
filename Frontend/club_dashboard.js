@@ -206,6 +206,13 @@ function renderViewStudentsTeamwise(teams) {
     const container = document.getElementById("viewStudentsTeamwise");
     const q = (document.getElementById("viewStudentsSearch").value || "").trim().toLowerCase();
     let html = "";
+
+    function paymentBadge(status) {
+        const normalized = String(status || "pending").toLowerCase();
+        const label = normalized === "not_required" ? "Free" : normalized.replace("_", " ");
+        return `<span class="payment-badge payment-badge--${escapeHtml(normalized)}">${escapeHtml(label)}</span>`;
+    }
+
     teams.forEach((team) => {
         const members = (team.members || []).filter(
             (m) =>
@@ -216,9 +223,11 @@ function renderViewStudentsTeamwise(teams) {
                 (team.team_name || "").toLowerCase().includes(q)
         );
         if (q && members.length === 0) return;
-        html += `<div class="team-block"><div class="team-name">${escapeHtml(team.team_name || "(Individual)")}</div><table class="team-members-table"><thead><tr><th>Reg No</th><th>Name</th><th>Email</th><th>Role</th></tr></thead><tbody>`;
+        const teamPaymentStatus = team.team_payment_status || "pending";
+        html += `<div class="team-block"><div class="team-name"><span>${escapeHtml(team.team_name || "(Individual)")}</span>${paymentBadge(teamPaymentStatus)}</div><table class="team-members-table"><thead><tr><th>Reg No</th><th>Name</th><th>Email</th><th>Role</th><th>Payment</th></tr></thead><tbody>`;
         members.forEach((m) => {
-            html += `<tr><td>${escapeHtml(m.reg_no)}</td><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.email || "")}</td><td>${m.is_leader ? "<span class=\"badge-leader\">Leader</span>" : ""}</td></tr>`;
+            const memberPaymentStatus = m.payment_status || teamPaymentStatus || "pending";
+            html += `<tr><td>${escapeHtml(m.reg_no)}</td><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.email || "")}</td><td>${m.is_leader ? "<span class=\"badge-leader\">Leader</span>" : ""}</td><td>${paymentBadge(memberPaymentStatus)}</td></tr>`;
         });
         html += "</tbody></table></div>";
     });

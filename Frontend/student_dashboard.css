@@ -119,6 +119,19 @@ button:hover {
   margin: 8px 0 12px 0;
 }
 
+.event-card-fee {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
 .event-card-actions {
   display: flex;
   gap: 10px;
@@ -263,6 +276,100 @@ button:hover {
 .btn-register-submit {
   width: 100%;
   margin-top: 12px;
+}
+
+.payment-choice-section {
+  margin-top: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.payment-choice-section h4 {
+  margin: 0 0 8px 0;
+  color: #111827;
+}
+
+.register-fee-summary {
+  margin: 0 0 12px 0;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.payment-choice-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.payment-choice-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: white;
+  font-weight: 600;
+}
+
+.payment-now-fields {
+  display: none;
+}
+
+.payment-now-fields.show {
+  display: block;
+}
+
+.payment-now-fields label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.payment-now-fields input,
+.payment-now-fields select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.payment-status {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.payment-status--paid,
+.payment-status--not_required {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.payment-status--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.payment-status--failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.btn-pay-now {
+  background: #059669;
+}
+
+.btn-pay-now:hover {
+  background: #047857;
 }
 
 /* My Events: clickable team name */
