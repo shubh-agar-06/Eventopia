@@ -93,9 +93,22 @@ router.post("/register-college", (req, res) => {
     });
 });
 
+/* LIST COLLEGES FOR LOGIN */
+router.get("/colleges", (req, res) => {
+    db.query(
+        "SELECT college_id, college_name FROM college ORDER BY college_name",
+        (err, results) => {
+            if (err) {
+                return res.status(500).json({ message: "Could not load colleges" });
+            }
+            res.json(results);
+        }
+    );
+});
+
 /* LOGIN */
 router.post("/login", (req, res) => {
-    const { role, username, password } = req.body;
+    const { role, username, password, college_id } = req.body;
 
     let query = "";
     let params = [];
@@ -105,12 +118,18 @@ router.post("/login", (req, res) => {
         params = [username, password];
     }
     else if (role === "club") {
-        query = "SELECT * FROM club WHERE club_name = ? AND password = ?";
-        params = [username, password];
+        if (!college_id) {
+            return res.status(400).json({ message: "College is required for club login" });
+        }
+        query = "SELECT * FROM club WHERE college_id = ? AND club_name = ? AND password = ?";
+        params = [college_id, username, password];
     }
     else if (role === "student") {
-        query = "SELECT * FROM student WHERE reg_no = ? AND password = ?";
-        params = [username, password];
+        if (!college_id) {
+            return res.status(400).json({ message: "College is required for student login" });
+        }
+        query = "SELECT * FROM student WHERE college_id = ? AND reg_no = ? AND password = ?";
+        params = [college_id, username, password];
     }
     else {
         return res.status(400).json({ message: "Invalid role" });
