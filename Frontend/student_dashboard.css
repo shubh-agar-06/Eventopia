@@ -247,18 +247,30 @@ button:hover {
   padding: 10px;
   border: 1px solid var(--border);
   background: #f9fafb;
+  color: #374151;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
   margin: 0;
 }
+.register-tabs .register-tab {
+  color: #374151 !important;
+  background: #f9fafb;
+}
 .register-tab:hover {
   background: #f3f4f6;
+  color: #1f2937;
+}
+.register-tabs .register-tab:hover {
+  color: #1f2937 !important;
 }
 .register-tab.active {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
+}
+.register-tabs .register-tab.active {
+  color: white !important;
 }
 .register-panel label {
   display: block;

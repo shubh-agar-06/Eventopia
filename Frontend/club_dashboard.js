@@ -272,12 +272,19 @@ document.getElementById("editEventForm").addEventListener("submit", function (e)
         alert("Student coordinator number must be empty or exactly 10 digits.");
         return;
     }
+    const editDate = document.getElementById("editEventDate").value;
+    const editTime = document.getElementById("editEventTime").value;
+    if (!isEventDateTimeFuture(editDate, editTime)) {
+        alert("Event date and time must be after the current date and time.");
+        return;
+    }
     const id = document.getElementById("editEventId").value;
     const payload = {
+        club_id,
         event_name: document.getElementById("editEventName").value.trim(),
         description: document.getElementById("editDescription").value,
-        event_date: document.getElementById("editEventDate").value,
-        event_time: document.getElementById("editEventTime").value,
+        event_date: editDate,
+        event_time: editTime,
         venue: document.getElementById("editVenue").value.trim(),
         max_teams: document.getElementById("editMaxTeams").value || 0,
         event_category: document.getElementById("editEventCategory").value,

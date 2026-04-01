@@ -178,7 +178,9 @@ router.post("/add-club", (req, res) => {
     `;
 
     db.query(sql, [college_id, club_name, password, club_email], (err) => {
-        if (err) return res.json({ message: "Error adding club" });
+        if (err) {
+            return res.status(400).json({ message: err.message || "Error adding club" });
+        }
         res.json({ message: "Club added successfully" });
     });
 });
@@ -194,7 +196,9 @@ router.post("/add-student", (req, res) => {
     `;
 
     db.query(sql, [college_id, reg_no, name, email, year_of_grad, password], (err) => {
-        if (err) return res.json({ message: "Error adding student" });
+        if (err) {
+            return res.status(400).json({ message: err.message || "Error adding student" });
+        }
         res.json({ message: "Student added successfully" });
     });
 });
@@ -542,6 +546,7 @@ router.put("/event-note/:id", (req, res) => {
 router.put("/update-event/:id", (req, res) => {
     const event_id = req.params.id;
     const {
+        club_id,
         event_name,
         description,
         event_date,
@@ -556,30 +561,58 @@ router.put("/update-event/:id", (req, res) => {
         faculty_coordinator_name
     } = req.body;
 
+    if (!club_id) {
+        return res.status(400).json({ message: "Club id is required" });
+    }
+    if (!event_date || !event_time) {
+        return res.status(400).json({ message: "Event date and time are required" });
+    }
+
+    const [year, month, day] = String(event_date).split("-").map(Number);
+    const [hour, minute] = String(event_time).split(":").map(Number);
+    const editedEventDateTime = new Date(year, (month || 1) - 1, day || 1, hour || 0, minute || 0, 0);
+    if (!Number.isFinite(editedEventDateTime.getTime()) || editedEventDateTime <= new Date()) {
+        return res.status(400).json({ message: "Event date and time must be after the current date and time." });
+    }
+
+    const nextRegistrationFee = registration_fee != null && registration_fee !== "" ? registration_fee : 0;
     const sql = `
         UPDATE event
         SET event_name=?, description=?, event_date=?, event_time=?, venue=?,
             max_teams=?, event_category=?, registration_fee=?, winning_amount=?,
             student_coordinator_name=?, student_coordinator_contact=?, faculty_coordinator_name=?
-        WHERE event_id=?
+        WHERE event_id=? AND club_id=?
     `;
-    db.query(sql, [
-        event_name || "",
-        description || "",
-        event_date,
-        event_time || "",
-        venue,
-        max_teams != null && max_teams !== "" ? max_teams : 0,
-        event_category || "Others",
-        registration_fee != null && registration_fee !== "" ? registration_fee : 0,
-        winning_amount != null && winning_amount !== "" ? winning_amount : 0,
-        student_coordinator_name || "",
-        student_coordinator_contact || "",
-        faculty_coordinator_name || "",
-        event_id
-    ], (err) => {
-        if (err) return res.json({ message: "Update failed" });
-        res.json({ message: "Event updated successfully" });
+    db.query("SELECT registration_fee FROM event WHERE event_id = ? AND club_id = ?", [event_id, club_id], (readErr, existingRows) => {
+        if (readErr) return res.status(500).json({ message: "Update failed" });
+        if (!existingRows.length) return res.status(403).json({ message: "You can only edit your own club events" });
+
+        const previousRegistrationFee = existingRows[0].registration_fee;
+        db.query(sql, [
+            event_name || "",
+            description || "",
+            event_date,
+            event_time || "",
+            venue,
+            max_teams != null && max_teams !== "" ? max_teams : 0,
+            event_category || "Others",
+            nextRegistrationFee,
+            winning_amount != null && winning_amount !== "" ? winning_amount : 0,
+            student_coordinator_name || "",
+            student_coordinator_contact || "",
+            faculty_coordinator_name || "",
+            event_id,
+            club_id
+        ], (err) => {
+            if (err) return res.json({ message: "Update failed" });
+
+            syncRegistrationStatusesForFeeChange(event_id, previousRegistrationFee, nextRegistrationFee, (syncErr) => {
+                if (syncErr) {
+                    return res.status(500).json({ message: "Event updated, but registration payment statuses could not be synchronized" });
+                }
+                res.json({ message: "Event updated successfully" });
+            });
+        });
     });
 });
 /* Parse team_size string to max members (e.g. "3" -> 3, "3-5" -> 5) */
@@ -594,6 +627,31 @@ function parseTeamSizeMax(teamSizeStr) {
 
 function generateTransactionId(regId) {
     return `TXN-${regId}-${Date.now()}`;
+}
+
+function syncRegistrationStatusesForFeeChange(event_id, previousFee, nextFee, callback) {
+    const oldFee = parseFloat(previousFee) || 0;
+    const newFee = parseFloat(nextFee) || 0;
+
+    if (oldFee <= 0 && newFee > 0) {
+        db.query(
+            "UPDATE event_registration SET payment_status = 'pending' WHERE event_id = ? AND payment_status = 'not_required'",
+            [event_id],
+            callback
+        );
+        return;
+    }
+
+    if (oldFee > 0 && newFee <= 0) {
+        db.query(
+            "UPDATE event_registration SET payment_status = 'not_required' WHERE event_id = ? AND payment_status <> 'paid'",
+            [event_id],
+            callback
+        );
+        return;
+    }
+
+    callback(null);
 }
 
 function upsertPaymentRecord({ reg_id, amount, payment_mode, transaction_id, payment_status, remarks }, callback) {
@@ -650,8 +708,14 @@ router.get("/event-registrations/:event_id", (req, res) => {
 router.get("/event-registrations/:event_id/teamwise", (req, res) => {
     const event_id = req.params.event_id;
     const sql = `
-        SELECT s.reg_no, s.name, s.email, er.team_name, er.is_leader, er.payment_status
+        SELECT s.reg_no, s.name, s.email, er.team_name, er.is_leader,
+               CASE
+                   WHEN COALESCE(e.registration_fee, 0) <= 0 THEN CASE WHEN er.payment_status = 'paid' THEN 'paid' ELSE 'not_required' END
+                   WHEN er.payment_status = 'not_required' THEN 'pending'
+                   ELSE er.payment_status
+               END AS payment_status
         FROM event_registration er
+        JOIN event e ON er.event_id = e.event_id
         JOIN student s ON er.student_id = s.student_id
         WHERE er.event_id = ?
         ORDER BY er.team_name, er.is_leader DESC
@@ -1052,7 +1116,12 @@ router.get("/my-registrations/:student_id", (req, res) => {
     const student_id = req.params.student_id;
     const sql = `
         SELECT er.reg_id, er.event_id, e.event_name, e.event_date, e.event_time, e.venue, c.club_name,
-               er.team_name, er.is_leader, e.is_completed, e.completion_note, er.payment_status,
+               er.team_name, er.is_leader, e.is_completed, e.completion_note,
+               CASE
+                   WHEN COALESCE(e.registration_fee, 0) <= 0 THEN CASE WHEN er.payment_status = 'paid' THEN 'paid' ELSE 'not_required' END
+                   WHEN er.payment_status = 'not_required' THEN 'pending'
+                   ELSE er.payment_status
+               END AS payment_status,
                e.registration_fee, p.payment_mode, p.transaction_id
         FROM event_registration er
         JOIN event e ON er.event_id = e.event_id
