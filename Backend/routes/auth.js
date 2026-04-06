@@ -468,7 +468,7 @@ router.post("/add-event", (req, res, next) => {
              team_size, max_teams, event_category, registration_fee, winning_amount,
              student_coordinator_name, student_coordinator_contact, faculty_coordinator_name,
              is_completed, completion_note)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '')
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL)
         `;
         const teamSizeStr = String(team_size || "").trim();
         db.query(sql, [
@@ -489,14 +489,20 @@ router.post("/add-event", (req, res, next) => {
 router.get("/events/:club_id", (req, res) => {
     const club_id = req.params.club_id;
 
-    db.query(
-        "SELECT * FROM event WHERE club_id = ? ORDER BY is_completed, event_date, event_time",
-        [club_id],
-        (err, results) => {
-            if (err) return res.json([]);
-            res.json(results);
+    autoCompleteElapsedEvents((autoErr) => {
+        if (autoErr) {
+            console.error("Auto-complete failed for /events/:club_id:", autoErr.message);
         }
-    );
+
+        db.query(
+            "SELECT * FROM event WHERE club_id = ? ORDER BY COALESCE(is_completed, 0), event_date, event_time",
+            [club_id],
+            (err, results) => {
+                if (err) return res.json([]);
+                res.json(results);
+            }
+        );
+    });
 });
 /*CLUB DELETE EVENT – also remove poster file if present */
 router.delete("/delete-event/:id", (req, res) => {
@@ -515,7 +521,7 @@ router.delete("/delete-event/:id", (req, res) => {
 
 router.put("/complete-event/:id", (req, res) => {
     const event_id = req.params.id;
-    const completion_note = (req.body.completion_note || "").trim();
+    const completion_note = String(req.body.completion_note || "").trim() || null;
 
     db.query(
         "UPDATE event SET is_completed = 1, completion_note = ? WHERE event_id = ?",
@@ -529,7 +535,7 @@ router.put("/complete-event/:id", (req, res) => {
 
 router.put("/event-note/:id", (req, res) => {
     const event_id = req.params.id;
-    const completion_note = (req.body.completion_note || "").trim();
+    const completion_note = String(req.body.completion_note || "").trim() || null;
 
     db.query(
         "UPDATE event SET completion_note = ? WHERE event_id = ? AND is_completed = 1",
@@ -774,6 +780,18 @@ function ensureEventCompletionColumns() {
 
 ensureEventCompletionColumns();
 
+function autoCompleteElapsedEvents(callback) {
+    const sql = `
+        UPDATE event
+        SET is_completed = 1
+        WHERE COALESCE(is_completed, 0) = 0
+          AND event_date IS NOT NULL
+          AND event_date <= DATE_SUB(CURDATE(), INTERVAL 3 DAY)
+    `;
+
+    db.query(sql, callback);
+}
+
 /*STUDENT SEE EVENT*/
 router.get("/student-events/:college_id", (req, res) => {
     const college_id = req.params.college_id;
@@ -787,9 +805,15 @@ router.get("/student-events/:college_id", (req, res) => {
         ORDER BY e.event_date
     `;
 
-    db.query(sql, [college_id], (err, results) => {
-        if (err) return res.json([]);
-        res.json(results);
+    autoCompleteElapsedEvents((autoErr) => {
+        if (autoErr) {
+            console.error("Auto-complete failed for /student-events/:college_id:", autoErr.message);
+        }
+
+        db.query(sql, [college_id], (err, results) => {
+            if (err) return res.json([]);
+            res.json(results);
+        });
     });
 });
 
@@ -806,26 +830,40 @@ router.post("/register-event", (req, res) => {
         return res.status(400).json({ message: "Team name is required (create or join a team)." });
     }
 
-    const checkRegistered = `
-        SELECT * FROM event_registration WHERE event_id=? AND student_id=?
-    `;
-    db.query(checkRegistered, [event_id, student_id], (err, already) => {
-        if (err) return res.status(500).json({ message: "Registration failed" });
-        if (already.length > 0) {
-            return res.json({ message: "Already registered for this event" });
+    autoCompleteElapsedEvents((autoErr) => {
+        if (autoErr) {
+            console.error("Auto-complete failed for /register-event:", autoErr.message);
         }
 
-        const getEvent = `SELECT max_teams, team_size, is_completed, registration_fee FROM event WHERE event_id = ?`;
-        db.query(getEvent, [event_id], (err, eventRows) => {
-            if (err || !eventRows.length) {
-                return res.status(400).json({ message: "Event not found" });
+        const checkRegistered = `
+            SELECT * FROM event_registration WHERE event_id=? AND student_id=?
+        `;
+        db.query(checkRegistered, [event_id, student_id], (err, already) => {
+            if (err) return res.status(500).json({ message: "Registration failed" });
+            if (already.length > 0) {
+                return res.json({ message: "Already registered for this event" });
             }
-            if (Number(eventRows[0].is_completed) === 1) {
-                return res.status(400).json({ message: "This event is already completed." });
-            }
-            const max_teams = parseInt(eventRows[0].max_teams, 10) || 999;
-            const team_size_max = parseTeamSizeMax(eventRows[0].team_size);
-            const fee = parseFloat(eventRows[0].registration_fee) || 0;
+
+            const getEvent = `
+                SELECT max_teams, team_size, is_completed, registration_fee, event_date
+                FROM event
+                WHERE event_id = ?
+            `;
+            db.query(getEvent, [event_id], (err, eventRows) => {
+                if (err || !eventRows.length) {
+                    return res.status(400).json({ message: "Event not found" });
+                }
+                const eventDate = eventRows[0].event_date ? new Date(eventRows[0].event_date) : null;
+                const cutoff = new Date();
+                cutoff.setHours(0, 0, 0, 0);
+                cutoff.setDate(cutoff.getDate() - 3);
+                const autoPast = eventDate && eventDate <= cutoff;
+                if (Number(eventRows[0].is_completed) === 1 || autoPast) {
+                    return res.status(400).json({ message: "This event is already completed." });
+                }
+                const max_teams = parseInt(eventRows[0].max_teams, 10) || 999;
+                const team_size_max = parseTeamSizeMax(eventRows[0].team_size);
+                const fee = parseFloat(eventRows[0].registration_fee) || 0;
 
             function createRegistration(registrationPaymentStatus) {
                 const insertSql = `
@@ -880,38 +918,39 @@ router.post("/register-event", (req, res) => {
                 });
             }
 
-            if (createTeam) {
-                const countTeams = `SELECT COUNT(DISTINCT team_name) AS cnt FROM event_registration WHERE event_id = ? AND team_name IS NOT NULL AND team_name != ''`;
-                db.query(countTeams, [event_id], (err, countRows) => {
-                    if (err) return res.status(500).json({ message: "Registration failed" });
-                    const currentTeams = countRows[0].cnt || 0;
-                    if (currentTeams >= max_teams) {
-                        return res.json({ message: "Maximum number of teams reached for this event." });
-                    }
-                    const registrationPaymentStatus = fee > 0 ? "pending" : "not_required";
-                    createRegistration(registrationPaymentStatus);
-                });
-            } else {
-                const countInTeam = `
-                    SELECT COUNT(*) AS cnt,
-                           MAX(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) AS team_paid
-                    FROM event_registration
-                    WHERE event_id = ? AND team_name = ?
-                `;
-                db.query(countInTeam, [event_id, name], (err, countRows) => {
-                    if (err) return res.status(500).json({ message: "Registration failed" });
-                    const inTeam = countRows[0].cnt || 0;
-                    if (inTeam === 0) {
-                        return res.json({ message: "No team with this name found for this event." });
-                    }
-                    if (inTeam >= team_size_max) {
-                        return res.json({ message: "This team is full." });
-                    }
-                    const teamPaid = Number(countRows[0].team_paid) === 1;
-                    const registrationPaymentStatus = fee <= 0 ? "not_required" : (teamPaid ? "paid" : "pending");
-                    createRegistration(registrationPaymentStatus);
-                });
-            }
+                if (createTeam) {
+                    const countTeams = `SELECT COUNT(DISTINCT team_name) AS cnt FROM event_registration WHERE event_id = ? AND team_name IS NOT NULL AND team_name != ''`;
+                    db.query(countTeams, [event_id], (err, countRows) => {
+                        if (err) return res.status(500).json({ message: "Registration failed" });
+                        const currentTeams = countRows[0].cnt || 0;
+                        if (currentTeams >= max_teams) {
+                            return res.json({ message: "Maximum number of teams reached for this event." });
+                        }
+                        const registrationPaymentStatus = fee > 0 ? "pending" : "not_required";
+                        createRegistration(registrationPaymentStatus);
+                    });
+                } else {
+                    const countInTeam = `
+                        SELECT COUNT(*) AS cnt,
+                               MAX(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) AS team_paid
+                        FROM event_registration
+                        WHERE event_id = ? AND team_name = ?
+                    `;
+                    db.query(countInTeam, [event_id, name], (err, countRows) => {
+                        if (err) return res.status(500).json({ message: "Registration failed" });
+                        const inTeam = countRows[0].cnt || 0;
+                        if (inTeam === 0) {
+                            return res.json({ message: "No team with this name found for this event." });
+                        }
+                        if (inTeam >= team_size_max) {
+                            return res.json({ message: "This team is full." });
+                        }
+                        const teamPaid = Number(countRows[0].team_paid) === 1;
+                        const registrationPaymentStatus = fee <= 0 ? "not_required" : (teamPaid ? "paid" : "pending");
+                        createRegistration(registrationPaymentStatus);
+                    });
+                }
+            });
         });
     });
 });
@@ -1130,9 +1169,15 @@ router.get("/my-registrations/:student_id", (req, res) => {
         WHERE er.student_id = ?
         ORDER BY COALESCE(e.is_completed, 0), e.event_date, e.event_time
     `;
-    db.query(sql, [student_id], (err, results) => {
-        if (err) return res.json([]);
-        res.json(results);
+    autoCompleteElapsedEvents((autoErr) => {
+        if (autoErr) {
+            console.error("Auto-complete failed for /my-registrations/:student_id:", autoErr.message);
+        }
+
+        db.query(sql, [student_id], (err, results) => {
+            if (err) return res.json([]);
+            res.json(results);
+        });
     });
 });
 

@@ -19,6 +19,12 @@ window.onload = function () {
     let allEvents = [];
     let registerModalEvent = null;
     let pendingPaymentRegistration = null;
+    const currentFilters = {
+        searchText: "",
+        date: "",
+        fee: "all",
+        participation: "all"
+    };
 
     function escapeHtml(str) {
         if (str == null) return "";
@@ -39,6 +45,25 @@ window.onload = function () {
 
     function isPaidEvent(event) {
         return toAmount(event.registration_fee) > 0;
+    }
+
+    function normalizeDate(value) {
+        return value ? String(value).split("T")[0] : "";
+    }
+
+    function parseTeamSizeMax(teamSize) {
+        if (teamSize == null || teamSize === "") return 1;
+        const s = String(teamSize).trim();
+        const rangeMatch = s.match(/^(\d+)-(\d+)$/);
+        if (rangeMatch) {
+            return Math.max(parseInt(rangeMatch[1], 10), parseInt(rangeMatch[2], 10));
+        }
+        const n = parseInt(s, 10);
+        return Number.isInteger(n) && n >= 1 ? n : 1;
+    }
+
+    function isIndividualEvent(event) {
+        return parseTeamSizeMax(event.team_size) <= 1;
     }
 
     function paymentStatusBadge(status) {
@@ -156,6 +181,32 @@ window.onload = function () {
         });
     }
 
+    function applyEventFilters() {
+        const filtered = allEvents.filter((event) => {
+            const searchMatches =
+                !currentFilters.searchText ||
+                (event.event_name && event.event_name.toLowerCase().includes(currentFilters.searchText)) ||
+                (event.club_name && event.club_name.toLowerCase().includes(currentFilters.searchText));
+
+            const eventDate = normalizeDate(event.event_date);
+            const dateMatches = !currentFilters.date || eventDate === currentFilters.date;
+
+            const feeMatches =
+                currentFilters.fee === "all" ||
+                (currentFilters.fee === "paid" && isPaidEvent(event)) ||
+                (currentFilters.fee === "free" && !isPaidEvent(event));
+
+            const participationMatches =
+                currentFilters.participation === "all" ||
+                (currentFilters.participation === "individual" && isIndividualEvent(event)) ||
+                (currentFilters.participation === "team" && !isIndividualEvent(event));
+
+            return searchMatches && dateMatches && feeMatches && participationMatches;
+        });
+
+        renderCards(filtered);
+    }
+
     function showEventDetail(event) {
         const dateStr = event.event_date ? event.event_date.split("T")[0] : "";
         const timeStr = event.event_time ? String(event.event_time).substring(0, 5) : "";
@@ -201,25 +252,52 @@ window.onload = function () {
             .then((res) => res.json())
             .then((data) => {
                 allEvents = data.filter((event) => Number(event.is_completed) !== 1);
-                renderCards(allEvents);
+                applyEventFilters();
             });
     }
 
-    document.getElementById("search").addEventListener("keyup", function () {
-        const text = this.value.toLowerCase().trim();
-        const filtered = allEvents.filter(
-            (event) =>
-                (event.event_name && event.event_name.toLowerCase().includes(text)) ||
-                (event.club_name && event.club_name.toLowerCase().includes(text))
-        );
-        renderCards(filtered);
+    document.getElementById("search").addEventListener("input", function () {
+        currentFilters.searchText = this.value.toLowerCase().trim();
+        applyEventFilters();
     });
 
     window.showToday = function () {
         const today = new Date().toISOString().split("T")[0];
-        const todayEvents = allEvents.filter((event) => event.event_date && event.event_date.split("T")[0] === today);
-        renderCards(todayEvents);
+        currentFilters.date = today;
+        document.getElementById("filterDate").value = today;
+        applyEventFilters();
     };
+
+    document.getElementById("filterTodayBtn").addEventListener("click", window.showToday);
+
+    document.getElementById("filterDate").addEventListener("change", function () {
+        currentFilters.date = this.value || "";
+        applyEventFilters();
+    });
+
+    document.getElementById("filterFee").addEventListener("change", function () {
+        currentFilters.fee = this.value;
+        applyEventFilters();
+    });
+
+    document.getElementById("filterParticipation").addEventListener("change", function () {
+        currentFilters.participation = this.value;
+        applyEventFilters();
+    });
+
+    document.getElementById("clearFiltersBtn").addEventListener("click", function () {
+        currentFilters.searchText = "";
+        currentFilters.date = "";
+        currentFilters.fee = "all";
+        currentFilters.participation = "all";
+
+        document.getElementById("search").value = "";
+        document.getElementById("filterDate").value = "";
+        document.getElementById("filterFee").value = "all";
+        document.getElementById("filterParticipation").value = "all";
+
+        applyEventFilters();
+    });
 
     window.register = function (event_id) {
         registerModalEvent = allEvents.find((event) => Number(event.event_id) === Number(event_id));

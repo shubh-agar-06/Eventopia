@@ -17,9 +17,35 @@
       <span class="student-reg-no" id="studentRegNo"></span>
     </header>
 
-    <input type="text" id="search" placeholder="Search Event" />
+    <section class="events-filters" aria-label="Event filters">
+      <input
+        type="text"
+        id="search"
+        placeholder="Search by event or club"
+      />
 
-    <button type="button" onclick="showToday()">Today's Events</button>
+      <div class="filters-row">
+        <button type="button" id="filterTodayBtn">Today's Events</button>
+
+        <input type="date" id="filterDate" title="Filter by date" />
+
+        <select id="filterFee" title="Filter by fee type">
+          <option value="all">All fees</option>
+          <option value="free">Free only</option>
+          <option value="paid">Paid only</option>
+        </select>
+
+        <select id="filterParticipation" title="Filter by participation type">
+          <option value="all">All participation</option>
+          <option value="individual">Individual</option>
+          <option value="team">Team</option>
+        </select>
+
+        <button type="button" id="clearFiltersBtn" class="btn-secondary">
+          Clear Filters
+        </button>
+      </div>
+    </section>
 
     <div class="events-grid" id="eventsGrid"></div>
 

@@ -43,11 +43,44 @@ h2 {
   display: block;
   margin: auto;
   padding: 11px;
-  width: 320px;
+  width: 340px;
   max-width: 95%;
   border-radius: 8px;
   border: 1px solid var(--border);
-  margin-bottom: 15px;
+  margin-bottom: 0;
+}
+
+.events-filters {
+  max-width: 1200px;
+  margin: 0 auto 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.filters-row input,
+.filters-row select {
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: white;
+  min-height: 38px;
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.btn-secondary:hover {
+  background: #d1d5db;
 }
 
 button {
@@ -484,6 +517,14 @@ tr:hover {
 
   .event-card-actions {
     flex-direction: column;
+  }
+
+  .filters-row {
+    justify-content: stretch;
+  }
+
+  .filters-row > * {
+    flex: 1 1 100%;
   }
 
   table {
