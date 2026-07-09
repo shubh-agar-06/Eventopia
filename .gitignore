@@ -1,4 +1,66 @@
+# Dependencies
 node_modules/
 Backend/node_modules/
 Frontend/node_modules/
+package-lock.json
+yarn.lock
+
+# Environment variables
 .env
+.env.local
+.env.*.local
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+._.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+Thumbs.db
+.Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# User uploads (generated at runtime)
+Backend/uploads/
+!Backend/uploads/.gitkeep
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Build outputs
+dist/
+build/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# IDE configuration
+jsconfig.json
+.eslintrc
+.prettierrc
+
+# Private/sensitive files
+secrets/
+credentials/
+private/
