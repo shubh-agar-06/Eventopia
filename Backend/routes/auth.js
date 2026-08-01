@@ -826,10 +826,6 @@ router.post("/register-event", (req, res) => {
     const mode = String(payment_mode || "").trim();
     const transactionRef = String(transaction_id || "").trim();
 
-    if (!name) {
-        return res.status(400).json({ message: "Team name is required (create or join a team)." });
-    }
-
     autoCompleteElapsedEvents((autoErr) => {
         if (autoErr) {
             console.error("Auto-complete failed for /register-event:", autoErr.message);
@@ -864,70 +860,96 @@ router.post("/register-event", (req, res) => {
                 const max_teams = parseInt(eventRows[0].max_teams, 10) || 999;
                 const team_size_max = parseTeamSizeMax(eventRows[0].team_size);
                 const fee = parseFloat(eventRows[0].registration_fee) || 0;
+                const isIndividualEvent = team_size_max <= 1;
 
-            function createRegistration(registrationPaymentStatus) {
-                const insertSql = `
-                    INSERT INTO event_registration (event_id, student_id, team_name, is_leader, payment_status)
-                    VALUES (?, ?, ?, ?, ?)
-                `;
-                db.query(insertSql, [event_id, student_id, name, createTeam ? 1 : 0, registrationPaymentStatus], (insertErr, result) => {
-                    if (insertErr) return res.json({ message: "Registration failed" });
+                if (!isIndividualEvent && !name) {
+                    return res.status(400).json({ message: "Team name is required to create or join a team." });
+                }
 
-                    const reg_id = result.insertId;
-                    if (fee <= 0) {
-                        return res.json({
-                            message: "Registered successfully. This is a free event.",
-                            payment_status: registrationPaymentStatus,
-                            requires_payment: false,
-                            reg_id
-                        });
-                    }
+                function createRegistration(registrationPaymentStatus) {
+                    const isPaymentOwner = isIndividualEvent || createTeam;
+                    const insertSql = `
+                        INSERT INTO event_registration (event_id, student_id, team_name, is_leader, payment_status)
+                        VALUES (?, ?, ?, ?, ?)
+                    `;
+                    db.query(insertSql, [event_id, student_id, isIndividualEvent ? null : name, isPaymentOwner ? 1 : 0, registrationPaymentStatus], (insertErr, result) => {
+                        if (insertErr) return res.json({ message: "Registration failed" });
 
-                    if (!createTeam) {
-                        return res.json({
-                            message: registrationPaymentStatus === "paid"
-                                ? "Registered successfully. This team is already marked as paid."
-                                : "Registered successfully. Team payment is pending with the leader.",
-                            payment_status: registrationPaymentStatus,
-                            requires_payment: false,
-                            reg_id
-                        });
-                    }
-
-                    upsertPaymentRecord({
-                        reg_id,
-                        amount: fee,
-                        payment_mode: "Razorpay",
-                        transaction_id: null,
-                        payment_status: "pending",
-                        remarks: wantsToPayNow ? "Ready for Razorpay checkout" : "Student chose pay later"
-                    }, (paymentErr) => {
-                        if (paymentErr) {
-                            return res.status(500).json({ message: "Registered, but payment record could not be created" });
+                        const reg_id = result.insertId;
+                        if (fee <= 0) {
+                            return res.json({
+                                message: "Registered successfully. This is a free event.",
+                                payment_status: registrationPaymentStatus,
+                                requires_payment: false,
+                                reg_id
+                            });
                         }
 
-                        return res.json({
-                            message: wantsToPayNow
-                                ? "Registration created. Continue to Razorpay payment."
-                                : "Registered successfully. Payment is pending and can be completed later.",
-                            payment_status: registrationPaymentStatus,
-                            requires_payment: registrationPaymentStatus === "pending",
-                            reg_id
+                        if (!isPaymentOwner) {
+                            return res.json({
+                                message: registrationPaymentStatus === "paid"
+                                    ? "Registered successfully. This team is already marked as paid."
+                                    : "Registered successfully. Team payment is pending with the leader.",
+                                payment_status: registrationPaymentStatus,
+                                requires_payment: false,
+                                reg_id
+                            });
+                        }
+
+                        upsertPaymentRecord({
+                            reg_id,
+                            amount: fee,
+                            payment_mode: "Razorpay",
+                            transaction_id: null,
+                            payment_status: "pending",
+                            remarks: wantsToPayNow ? "Ready for Razorpay checkout" : "Student chose pay later"
+                        }, (paymentErr) => {
+                            if (paymentErr) {
+                                return res.status(500).json({ message: "Registered, but payment record could not be created" });
+                            }
+
+                            return res.json({
+                                message: wantsToPayNow
+                                    ? "Registration created. Continue to Razorpay payment."
+                                    : "Registered successfully. Payment is pending and can be completed later.",
+                                payment_status: registrationPaymentStatus,
+                                requires_payment: registrationPaymentStatus === "pending",
+                                reg_id
+                            });
                         });
                     });
-                });
-            }
+                }
+
+                if (isIndividualEvent) {
+                    const registrationPaymentStatus = fee > 0 ? "pending" : "not_required";
+                    createRegistration(registrationPaymentStatus);
+                    return;
+                }
 
                 if (createTeam) {
-                    const countTeams = `SELECT COUNT(DISTINCT team_name) AS cnt FROM event_registration WHERE event_id = ? AND team_name IS NOT NULL AND team_name != ''`;
-                    db.query(countTeams, [event_id], (err, countRows) => {
+                    const checkTeamName = `
+                        SELECT COUNT(*) AS cnt
+                        FROM event_registration
+                        WHERE event_id = ? AND team_name = ?
+                    `;
+                    db.query(checkTeamName, [event_id, name], (err, nameRows) => {
                         if (err) return res.status(500).json({ message: "Registration failed" });
-                        const currentTeams = countRows[0].cnt || 0;
-                        if (currentTeams >= max_teams) {
-                            return res.json({ message: "Maximum number of teams reached for this event." });
+                        if ((nameRows[0].cnt || 0) > 0) {
+                            return res.status(409).json({
+                                message: "This team name already exists. Please choose another team name or join the existing team."
+                            });
                         }
-                        const registrationPaymentStatus = fee > 0 ? "pending" : "not_required";
-                        createRegistration(registrationPaymentStatus);
+
+                        const countTeams = `SELECT COUNT(DISTINCT team_name) AS cnt FROM event_registration WHERE event_id = ? AND team_name IS NOT NULL AND team_name != ''`;
+                        db.query(countTeams, [event_id], (err, countRows) => {
+                            if (err) return res.status(500).json({ message: "Registration failed" });
+                            const currentTeams = countRows[0].cnt || 0;
+                            if (currentTeams >= max_teams) {
+                                return res.json({ message: "Maximum number of teams reached for this event." });
+                            }
+                            const registrationPaymentStatus = fee > 0 ? "pending" : "not_required";
+                            createRegistration(registrationPaymentStatus);
+                        });
                     });
                 } else {
                     const countInTeam = `

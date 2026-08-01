@@ -76,6 +76,12 @@ window.onload = function () {
             document.getElementById("paymentChoiceSection").style.display = "none";
             return;
         }
+        if (isIndividualEvent(registerModalEvent)) {
+            document.getElementById("paymentChoiceSection").style.display = "block";
+            const wantsToPayNow = document.querySelector('input[name="paymentChoice"]:checked').value === "now";
+            document.getElementById("paymentNowFields").classList.toggle("show", wantsToPayNow);
+            return;
+        }
         const isCreate = document.querySelector('.register-tab[data-tab="create"]').classList.contains("active");
         document.getElementById("paymentChoiceSection").style.display = isCreate ? "block" : "none";
         const wantsToPayNow = document.querySelector('input[name="paymentChoice"]:checked').value === "now";
@@ -308,8 +314,13 @@ window.onload = function () {
 
         document.getElementById("registerTeamNameCreate").value = "";
         document.getElementById("registerTeamNameJoin").value = "";
+        const isIndividual = isIndividualEvent(registerModalEvent);
         document.querySelector(".register-tab.active").classList.remove("active");
-        document.getElementById("registerCreate").style.display = "block";
+        document.getElementById("registerSubText").textContent = isIndividual
+            ? "This is an individual event. No team name is required."
+            : "Create a new team (you'll be leader) or join an existing team.";
+        document.getElementById("registerTabs").style.display = isIndividual ? "none" : "flex";
+        document.getElementById("registerCreate").style.display = isIndividual ? "none" : "block";
         document.getElementById("registerJoin").style.display = "none";
         document.querySelector('.register-tab[data-tab="create"]').classList.add("active");
         document.querySelector('input[name="paymentChoice"][value="later"]').checked = true;
@@ -336,15 +347,18 @@ window.onload = function () {
     document.getElementById("registerSubmitBtn").addEventListener("click", function () {
         if (!registerModalEvent) return;
 
+        const isIndividual = isIndividualEvent(registerModalEvent);
         const isCreate = document.querySelector('.register-tab[data-tab="create"]').classList.contains("active");
-        const teamName = (isCreate ? document.getElementById("registerTeamNameCreate") : document.getElementById("registerTeamNameJoin")).value.trim();
-        if (!teamName) {
+        const teamName = isIndividual
+            ? ""
+            : (isCreate ? document.getElementById("registerTeamNameCreate") : document.getElementById("registerTeamNameJoin")).value.trim();
+        if (!isIndividual && !teamName) {
             alert("Please enter a team name.");
             return;
         }
 
         const paidEvent = isPaidEvent(registerModalEvent);
-        const payNow = paidEvent && isCreate && document.querySelector('input[name="paymentChoice"]:checked').value === "now";
+        const payNow = paidEvent && (isIndividual || isCreate) && document.querySelector('input[name="paymentChoice"]:checked').value === "now";
 
         fetch(`${API}/register-event`, {
             method: "POST",
@@ -353,7 +367,7 @@ window.onload = function () {
                 event_id: registerModalEvent.event_id,
                 student_id,
                 team_name: teamName,
-                is_leader: isCreate ? 1 : 0,
+                is_leader: (isIndividual || isCreate) ? 1 : 0,
                 pay_now: payNow
             }),
         })
