@@ -3,12 +3,43 @@ const loginForm = document.getElementById("loginForm");
 const loginMessage = document.getElementById("message");
 const roleSelect = document.getElementById("role");
 const collegeSelect = document.getElementById("collegeSelect");
+const usernameInput = document.getElementById("username");
+const passwordInput = document.getElementById("password");
+const usernameLabel = document.getElementById("usernameLabel");
+const guideBtn = document.getElementById("openGuide");
+const guideModal = document.getElementById("guideModal");
+const closeGuideBtn = document.getElementById("closeGuide");
+const guideCloseButton = document.getElementById("guideCloseButton");
 const registerCollegeBtn = document.getElementById("openCollegeRegister");
 const registerCollegeModal = document.getElementById("collegeRegisterModal");
 const closeCollegeRegisterBtn = document.getElementById("closeCollegeRegister");
 const collegeRegisterForm = document.getElementById("collegeRegisterForm");
 const collegeRegisterMessage = document.getElementById("collegeRegisterMessage");
 let collegesLoaded = false;
+let lastFocusedElement = null;
+
+const roleConfig = {
+    default: {
+        label: "Email",
+        placeholder: "Enter email",
+        username: ""
+    },
+    college: {
+        label: "College Email",
+        placeholder: "Enter college email",
+        username: "democlg@gmail.com"
+    },
+    club: {
+        label: "Club Email or Club Name",
+        placeholder: "Enter club email or club name",
+        username: "democlub@gmail.com"
+    },
+    student: {
+        label: "Registration Number or Student Email",
+        placeholder: "Enter registration number or student email",
+        username: "24BCE1000"
+    }
+};
 
 function clearAuthStorage() {
     AUTH_KEYS.forEach((key) => {
@@ -56,6 +87,12 @@ function renderCollegeOptions(colleges) {
     });
 }
 
+function selectFirstCollegeForDemo() {
+    if (!collegeSelect.value && collegeSelect.options.length > 1) {
+        collegeSelect.selectedIndex = 1;
+    }
+}
+
 function loadColleges() {
     if (collegesLoaded) return Promise.resolve();
 
@@ -64,6 +101,7 @@ function loadColleges() {
         .then((data) => {
             renderCollegeOptions(Array.isArray(data) ? data : []);
             collegesLoaded = true;
+            selectFirstCollegeForDemo();
         })
         .catch((err) => {
             console.error(err);
@@ -75,25 +113,106 @@ function loadColleges() {
 function updateLoginFields() {
     const role = roleSelect.value;
     const requiresCollege = role === "club" || role === "student";
+    const config = roleConfig[role] || roleConfig.default;
+
+    usernameLabel.textContent = config.label;
+    usernameInput.placeholder = config.placeholder;
+
+    if (roleConfig[role]) {
+        usernameInput.value = config.username;
+        passwordInput.value = "demo";
+    } else {
+        usernameInput.value = "";
+        passwordInput.value = "";
+    }
 
     collegeSelect.style.display = requiresCollege ? "block" : "none";
     collegeSelect.required = requiresCollege;
     if (!requiresCollege) {
         collegeSelect.value = "";
     } else {
-        loadColleges();
+        loadColleges().then(selectFirstCollegeForDemo);
     }
+}
+
+function getFocusableElements(modal) {
+    return Array.from(modal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )).filter((element) => !element.disabled && element.offsetParent !== null);
+}
+
+function openModal(modal, focusTarget) {
+    lastFocusedElement = document.activeElement;
+    modal.classList.add("show");
+    document.body.classList.add("modal-open");
+    (focusTarget || getFocusableElements(modal)[0] || modal).focus();
+}
+
+function closeModal(modal) {
+    modal.classList.remove("show");
+    if (!document.querySelector(".modal.show")) {
+        document.body.classList.remove("modal-open");
+    }
+    if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
+        lastFocusedElement.focus();
+    }
+}
+
+function openGuideModal() {
+    openModal(guideModal, closeGuideBtn);
+}
+
+function closeGuideModal() {
+    closeModal(guideModal);
 }
 
 function openCollegeModal() {
     collegeRegisterForm.reset();
     setMessage(collegeRegisterMessage, "", "");
-    registerCollegeModal.classList.add("show");
+    openModal(registerCollegeModal, closeCollegeRegisterBtn);
 }
 
 function closeCollegeModal() {
-    registerCollegeModal.classList.remove("show");
+    closeModal(registerCollegeModal);
 }
+
+function trapModalFocus(e) {
+    const openModalEl = document.querySelector(".modal.show");
+    if (!openModalEl) return;
+
+    if (e.key === "Escape") {
+        if (openModalEl === guideModal) closeGuideModal();
+        if (openModalEl === registerCollegeModal) closeCollegeModal();
+        return;
+    }
+
+    if (e.key !== "Tab") return;
+
+    const focusable = getFocusableElements(openModalEl);
+    if (!focusable.length) {
+        e.preventDefault();
+        return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+    }
+}
+
+guideBtn.addEventListener("click", openGuideModal);
+closeGuideBtn.addEventListener("click", closeGuideModal);
+guideCloseButton.addEventListener("click", closeGuideModal);
+guideModal.addEventListener("click", function (e) {
+    if (e.target === guideModal) {
+        closeGuideModal();
+    }
+});
 
 registerCollegeBtn.addEventListener("click", openCollegeModal);
 closeCollegeRegisterBtn.addEventListener("click", closeCollegeModal);
@@ -102,6 +221,7 @@ registerCollegeModal.addEventListener("click", function (e) {
         closeCollegeModal();
     }
 });
+document.addEventListener("keydown", trapModalFocus);
 
 roleSelect.addEventListener("change", updateLoginFields);
 updateLoginFields();
@@ -113,8 +233,8 @@ loginForm.addEventListener("submit", function (e) {
     e.preventDefault();
 
     const role = roleSelect.value;
-    const username = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value;
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
     const college_id = collegeSelect.value;
 
     if ((role === "club" || role === "student") && !college_id) {
@@ -193,8 +313,8 @@ collegeRegisterForm.addEventListener("submit", function (e) {
             collegesLoaded = false;
             roleSelect.value = "college";
             updateLoginFields();
-            document.getElementById("username").value = payload.clg_email;
-            document.getElementById("password").value = payload.password;
+            usernameInput.value = payload.clg_email;
+            passwordInput.value = payload.password;
             setMessage(loginMessage, "College registered. You can log in now.", "green");
             setTimeout(closeCollegeModal, 900);
         })

@@ -22,7 +22,7 @@ const posterUpload = multer({
             cb(null, Date.now() + "_" + base + "." + (ext === "jpeg" ? "jpg" : ext));
         }
     }),
-    limits: { fileSize: 5 * 1024 * 1024 },
+    limits: { fileSize: 1 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const ok = /\.(png|jpe?g)$/i.test(file.originalname) || (file.mimetype && (file.mimetype === "image/png" || file.mimetype.startsWith("image/jpeg")));
         if (ok) cb(null, true); else cb(new Error("Only PNG, JPEG and JPG images allowed"), false);
@@ -121,15 +121,15 @@ router.post("/login", (req, res) => {
         if (!college_id) {
             return res.status(400).json({ message: "College is required for club login" });
         }
-        query = "SELECT * FROM club WHERE college_id = ? AND club_name = ? AND password = ?";
-        params = [college_id, username, password];
+        query = "SELECT * FROM club WHERE college_id = ? AND (club_email = ? OR club_name = ?) AND password = ?";
+        params = [college_id, username, username, password];
     }
     else if (role === "student") {
         if (!college_id) {
             return res.status(400).json({ message: "College is required for student login" });
         }
-        query = "SELECT * FROM student WHERE college_id = ? AND reg_no = ? AND password = ?";
-        params = [college_id, username, password];
+        query = "SELECT * FROM student WHERE college_id = ? AND (reg_no = ? OR email = ?) AND password = ?";
+        params = [college_id, username, username, password];
     }
     else {
         return res.status(400).json({ message: "Invalid role" });

@@ -13,38 +13,117 @@
     <link rel="stylesheet" href="login.css" />
   </head>
   <body>
-    <div class="login-container">
-      <h2>EVENTOPIA</h2>
+    <button
+      type="button"
+      id="openGuide"
+      class="guide-btn"
+      aria-label="Open Eventopia guide"
+    >
+      Guide
+    </button>
 
-      <form id="loginForm">
-        <select id="role" required>
-          <option value="">Select Role</option>
-          <option value="college">College</option>
-          <option value="club">Club</option>
-          <option value="student">Student</option>
-        </select>
+    <main class="login-page">
+      <div class="login-container">
+        <h2>EVENTOPIA</h2>
 
-        <select id="collegeSelect" style="display: none">
-          <option value="">Select College</option>
-        </select>
+        <form id="loginForm">
+          <select id="role" required>
+            <option value="">Select Role</option>
+            <option value="college">College</option>
+            <option value="club">Club</option>
+            <option value="student">Student</option>
+          </select>
 
-        <input
-          type="text"
-          id="username"
-          placeholder="Clg Email / Club Name / Reg No"
-          required
-        />
+          <select id="collegeSelect" style="display: none">
+            <option value="">Select College</option>
+          </select>
 
-        <input type="password" id="password" placeholder="Password" required />
+          <label for="username" id="usernameLabel">Email</label>
+          <input
+            type="text"
+            id="username"
+            placeholder="Enter email"
+            required
+          />
 
-        <button type="submit">Login</button>
-      </form>
+          <input
+            type="password"
+            id="password"
+            placeholder="Password"
+            required
+          />
 
-      <button type="button" id="openCollegeRegister" class="secondary-btn">
-        Register College
-      </button>
+          <button type="submit" id="loginButton">Login</button>
+        </form>
 
-      <p id="message"></p>
+        <button type="button" id="openCollegeRegister" class="secondary-btn">
+          Register College
+        </button>
+
+        <p id="message"></p>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <p>&copy; 2026 Eventopia</p>
+      <p>Developed by Shubham Agarwal</p>
+      <p class="footer-links">
+        <a
+          href="https://linkedin.com/in/shubham-agarwal-sa2006"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          linkedin.com/in/shubham-agarwal-sa2006
+        </a>
+        <a
+          href="https://github.com/shubh-agar-06"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          github.com/shubh-agar-06
+        </a>
+      </p>
+    </footer>
+
+    <div
+      id="guideModal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="guideTitle"
+    >
+      <div class="modal-content guide-modal-content">
+        <button type="button" class="modal-close" id="closeGuide">
+          &times;
+        </button>
+        <h3 id="guideTitle">Eventopia Guide</h3>
+
+        <div class="guide-copy">
+          <p>
+            Eventopia helps colleges manage campus events from one place.
+            Register your college, import club and student data, and allow
+            clubs to publish events that students can discover and join.
+          </p>
+          <p>For a quick demo:</p>
+          <ul>
+            <li>Choose a role from the role selector.</li>
+            <li>Use the demo credentials that are filled automatically.</li>
+            <li>
+              Clubs can use a club email or club name. Students can use a
+              registration number or student email.
+            </li>
+            <li>Select a college if you are logging in as a club or student.</li>
+            <li>Click Login to continue.</li>
+          </ul>
+          <p class="guide-note">
+            On the first visit, the website may take 30-60 seconds to respond
+            because it is hosted on Render Free Tier. Please wait and avoid
+            refreshing the page while the server wakes up.
+          </p>
+        </div>
+
+        <button type="button" id="guideCloseButton">Close</button>
+      </div>
     </div>
 
     <div id="collegeRegisterModal" class="modal">

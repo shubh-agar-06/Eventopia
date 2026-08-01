@@ -24,6 +24,7 @@ const studentCoordinatorName = document.getElementById("studentCoordinatorName")
 const studentCoordinatorContact = document.getElementById("studentCoordinatorContact");
 const facultyCoordinatorName = document.getElementById("facultyCoordinatorName");
 const msg = document.getElementById("msg");
+const MAX_POSTER_SIZE = 1024 * 1024;
 
 /* Set event date min to today (and update when date changes so time min can be set if date is today) */
 function setDateMin() {
@@ -58,6 +59,19 @@ function isEventDateTimeFuture(dateStr, timeStr) {
     return eventDt > new Date();
 }
 
+function isPosterSizeValid(file) {
+    return !file || file.size <= MAX_POSTER_SIZE;
+}
+
+posterFile.addEventListener("change", function () {
+    const file = this.files[0];
+    if (!isPosterSizeValid(file)) {
+        this.value = "";
+        msg.innerText = "Poster upload size must be 1MB or less.";
+        msg.style.color = "crimson";
+    }
+});
+
 eventForm.addEventListener("submit", e => {
     e.preventDefault();
     msg.style.color = "";
@@ -75,6 +89,11 @@ eventForm.addEventListener("submit", e => {
     }
     if (!isEventDateTimeFuture(eventDate.value, eventTime.value)) {
         msg.innerText = "Event date and time must be after the current date and time.";
+        msg.style.color = "crimson";
+        return;
+    }
+    if (!isPosterSizeValid(posterFile.files[0])) {
+        msg.innerText = "Poster upload size must be 1MB or less.";
         msg.style.color = "crimson";
         return;
     }
