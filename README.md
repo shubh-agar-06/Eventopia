@@ -218,6 +218,7 @@ For issues, questions, or suggestions, please open an issue on GitHub or contact
 - Verify MySQL is running
 - Check `.env` credentials match your MySQL setup
 - Ensure database name is correct
+- If you're using a hosted Free Aiven database, it may be powered off; contact the developer to restart or provision the database
 
 **Port Already in Use:**
 

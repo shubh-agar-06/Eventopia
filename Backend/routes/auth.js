@@ -417,29 +417,95 @@ router.post("/import-students", upload.single("file"), (req, res) => {
     process(1);
 });
 
-/* CLG delete club*/
+/* CLG delete club */
 router.delete("/delete-club/:id", (req, res) => {
+    const clubId = req.params.id;
+
     db.query(
-        "DELETE FROM club WHERE club_id = ?",
-        [req.params.id],
-        err => {
-            if (err) return res.json({ message: "Delete failed" });
-            res.json({ message: "Club deleted" });
+        "SELECT club_email, club_name FROM club WHERE club_id = ?",
+        [clubId],
+        (err, result) => {
+            if (err) {
+                return res.status(500).json({ message: "Database error" });
+            }
+
+            if (result.length === 0) {
+                return res.status(404).json({ message: "Club not found" });
+            }
+
+            const club = result[0];
+            const clubEmail = String(club.club_email || "").trim().toLowerCase();
+            const clubName = String(club.club_name || "").trim().toLowerCase();
+
+            if (
+                clubEmail === "democlub@gmail.com" ||
+                clubName === "democlub"
+            ) {
+                return res.status(403).json({
+                    message: "Demo club cannot be deleted."
+                });
+            }
+
+            db.query(
+                "DELETE FROM club WHERE club_id = ?",
+                [clubId],
+                (err) => {
+                    if (err) {
+                        return res.status(500).json({ message: "Delete failed" });
+                    }
+
+                    res.json({ message: "Club deleted" });
+                }
+            );
         }
     );
 });
 
-/*CLG delete student*/
+/* CLG delete student */
 router.delete("/delete-student/:id", (req, res) => {
+    const studentId = req.params.id;
+
     db.query(
-        "DELETE FROM student WHERE student_id = ?",
-        [req.params.id],
-        err => {
-            if (err) return res.json({ message: "Delete failed" });
-            res.json({ message: "Student deleted" });
+        "SELECT reg_no, email FROM student WHERE student_id = ?",
+        [studentId],
+        (err, result) => {
+            if (err) {
+                return res.status(500).json({ message: "Database error" });
+            }
+
+            if (result.length === 0) {
+                return res.status(404).json({ message: "Student not found" });
+            }
+
+            const student = result[0];
+            const studentRegNo = String(student.reg_no || "").trim().toLowerCase();
+            const studentEmail = String(student.email || "").trim().toLowerCase();
+
+            if (
+                studentRegNo === "24bce1000" ||
+                studentEmail === "demostud1@gmail.com" ||
+                studentEmail === "demostud1"
+            ) {
+                return res.status(403).json({
+                    message: "Demo student cannot be deleted."
+                });
+            }
+
+            db.query(
+                "DELETE FROM student WHERE student_id = ?",
+                [studentId],
+                (err) => {
+                    if (err) {
+                        return res.status(500).json({ message: "Delete failed" });
+                    }
+
+                    res.json({ message: "Student deleted" });
+                }
+            );
         }
     );
 });
+
 /*CLUB ADD EVENT – poster uploaded as PNG/JPEG/JPG, saved in uploads/posters, filename stored in DB */
 router.post("/add-event", (req, res, next) => {
     posterUpload.single("poster")(req, res, (err) => {
