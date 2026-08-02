@@ -23,6 +23,7 @@ const winningAmount = document.getElementById("winningAmount");
 const studentCoordinatorName = document.getElementById("studentCoordinatorName");
 const studentCoordinatorContact = document.getElementById("studentCoordinatorContact");
 const facultyCoordinatorName = document.getElementById("facultyCoordinatorName");
+const editPosterFile = document.getElementById("editPosterFile");
 const msg = document.getElementById("msg");
 const MAX_POSTER_SIZE = 1024 * 1024;
 
@@ -71,6 +72,16 @@ posterFile.addEventListener("change", function () {
         msg.style.color = "crimson";
     }
 });
+
+if (editPosterFile) {
+    editPosterFile.addEventListener("change", function () {
+        const file = this.files[0];
+        if (!isPosterSizeValid(file)) {
+            this.value = "";
+            alert("Poster upload size must be 1MB or less.");
+        }
+    });
+}
 
 eventForm.addEventListener("submit", e => {
     e.preventDefault();
@@ -269,6 +280,7 @@ function openEditEventModal(event) {
     document.getElementById("editEventId").value = event.event_id;
     document.getElementById("editEventName").value = event.event_name || "";
     document.getElementById("editDescription").value = event.description || "";
+    if (editPosterFile) editPosterFile.value = "";
     document.getElementById("editEventDate").value = event.event_date ? event.event_date.split("T")[0] : "";
     const timeVal = event.event_time ? String(event.event_time) : "";
     document.getElementById("editEventTime").value = timeVal.substring(0, 5) || "";
@@ -298,31 +310,36 @@ document.getElementById("editEventForm").addEventListener("submit", function (e)
         return;
     }
     const id = document.getElementById("editEventId").value;
-    const payload = {
-        club_id,
-        event_name: document.getElementById("editEventName").value.trim(),
-        description: document.getElementById("editDescription").value,
-        event_date: editDate,
-        event_time: editTime,
-        venue: document.getElementById("editVenue").value.trim(),
-        max_teams: document.getElementById("editMaxTeams").value || 0,
-        event_category: document.getElementById("editEventCategory").value,
-        registration_fee: document.getElementById("editRegistrationFee").value || 0,
-        winning_amount: document.getElementById("editWinningAmount").value || 0,
-        student_coordinator_name: document.getElementById("editStudentCoordinatorName").value,
-        student_coordinator_contact: coordContact,
-        faculty_coordinator_name: document.getElementById("editFacultyCoordinatorName").value
-    };
+    const formData = new FormData();
+    formData.append("club_id", club_id);
+    formData.append("event_name", document.getElementById("editEventName").value.trim());
+    formData.append("description", document.getElementById("editDescription").value);
+    formData.append("event_date", editDate);
+    formData.append("event_time", editTime);
+    formData.append("venue", document.getElementById("editVenue").value.trim());
+    formData.append("max_teams", document.getElementById("editMaxTeams").value || 0);
+    formData.append("event_category", document.getElementById("editEventCategory").value);
+    formData.append("registration_fee", document.getElementById("editRegistrationFee").value || 0);
+    formData.append("winning_amount", document.getElementById("editWinningAmount").value || 0);
+    formData.append("student_coordinator_name", document.getElementById("editStudentCoordinatorName").value);
+    formData.append("student_coordinator_contact", coordContact);
+    formData.append("faculty_coordinator_name", document.getElementById("editFacultyCoordinatorName").value);
+    if (editPosterFile && editPosterFile.files.length > 0) {
+        formData.append("poster", editPosterFile.files[0]);
+    }
+
     fetch(`/api/update-event/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: formData
     })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message);
-            document.getElementById("editEventModal").classList.remove("show");
-            loadEvents();
+        .then(res => res.json().then(data => ({ ok: res.ok, data })))
+        .then(({ ok, data }) => {
+            alert(data.message || (ok ? "Event updated successfully" : "Update failed"));
+            if (ok) {
+                document.getElementById("editEventModal").classList.remove("show");
+                if (editPosterFile) editPosterFile.value = "";
+                loadEvents();
+            }
         })
         .catch(() => alert("Update failed"));
 });

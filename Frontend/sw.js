@@ -1,4 +1,4 @@
-const CACHE_NAME = "eventopia-static-v18";
+const CACHE_NAME = "eventopia-static-v15";
 const APP_SHELL = [
     "/",
     "/login.html",

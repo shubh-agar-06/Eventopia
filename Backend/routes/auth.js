@@ -615,75 +615,130 @@ router.put("/event-note/:id", (req, res) => {
 });
 
 /*club update event – all fields except team_size (members per team) */
-router.put("/update-event/:id", (req, res) => {
-    const event_id = req.params.id;
-    const {
-        club_id,
-        event_name,
-        description,
-        event_date,
-        event_time,
-        venue,
-        max_teams,
-        event_category,
-        registration_fee,
-        winning_amount,
-        student_coordinator_name,
-        student_coordinator_contact,
-        faculty_coordinator_name
-    } = req.body;
+router.put("/update-event/:id", (req, res, next) => {
+    posterUpload.single("poster")(req, res, (err) => {
+        if (err) return res.status(400).json({ message: err.message || "Invalid poster file" });
 
-    if (!club_id) {
-        return res.status(400).json({ message: "Club id is required" });
-    }
-    if (!event_date || !event_time) {
-        return res.status(400).json({ message: "Event date and time are required" });
-    }
-
-    const [year, month, day] = String(event_date).split("-").map(Number);
-    const [hour, minute] = String(event_time).split(":").map(Number);
-    const editedEventDateTime = new Date(year, (month || 1) - 1, day || 1, hour || 0, minute || 0, 0);
-    if (!Number.isFinite(editedEventDateTime.getTime()) || editedEventDateTime <= new Date()) {
-        return res.status(400).json({ message: "Event date and time must be after the current date and time." });
-    }
-
-    const nextRegistrationFee = registration_fee != null && registration_fee !== "" ? registration_fee : 0;
-    const sql = `
-        UPDATE event
-        SET event_name=?, description=?, event_date=?, event_time=?, venue=?,
-            max_teams=?, event_category=?, registration_fee=?, winning_amount=?,
-            student_coordinator_name=?, student_coordinator_contact=?, faculty_coordinator_name=?
-        WHERE event_id=? AND club_id=?
-    `;
-    db.query("SELECT registration_fee FROM event WHERE event_id = ? AND club_id = ?", [event_id, club_id], (readErr, existingRows) => {
-        if (readErr) return res.status(500).json({ message: "Update failed" });
-        if (!existingRows.length) return res.status(403).json({ message: "You can only edit your own club events" });
-
-        const previousRegistrationFee = existingRows[0].registration_fee;
-        db.query(sql, [
-            event_name || "",
-            description || "",
+        const event_id = req.params.id;
+        const {
+            club_id,
+            event_name,
+            description,
             event_date,
-            event_time || "",
+            event_time,
             venue,
-            max_teams != null && max_teams !== "" ? max_teams : 0,
-            event_category || "Others",
-            nextRegistrationFee,
-            winning_amount != null && winning_amount !== "" ? winning_amount : 0,
-            student_coordinator_name || "",
-            student_coordinator_contact || "",
-            faculty_coordinator_name || "",
-            event_id,
-            club_id
-        ], (err) => {
-            if (err) return res.json({ message: "Update failed" });
+            max_teams,
+            event_category,
+            registration_fee,
+            winning_amount,
+            student_coordinator_name,
+            student_coordinator_contact,
+            faculty_coordinator_name
+        } = req.body;
 
-            syncRegistrationStatusesForFeeChange(event_id, previousRegistrationFee, nextRegistrationFee, (syncErr) => {
-                if (syncErr) {
-                    return res.status(500).json({ message: "Event updated, but registration payment statuses could not be synchronized" });
+        if (!club_id) {
+            return res.status(400).json({ message: "Club id is required" });
+        }
+        if (!event_date || !event_time) {
+            return res.status(400).json({ message: "Event date and time are required" });
+        }
+
+        const [year, month, day] = String(event_date).split("-").map(Number);
+        const [hour, minute] = String(event_time).split(":").map(Number);
+        const editedEventDateTime = new Date(year, (month || 1) - 1, day || 1, hour || 0, minute || 0, 0);
+        if (!Number.isFinite(editedEventDateTime.getTime()) || editedEventDateTime <= new Date()) {
+            return res.status(400).json({ message: "Event date and time must be after the current date and time." });
+        }
+
+        const nextRegistrationFee = registration_fee != null && registration_fee !== "" ? registration_fee : 0;
+        const nextPoster = req.file && req.file.filename ? req.file.filename : null;
+
+        db.query("SELECT registration_fee, poster FROM event WHERE event_id = ? AND club_id = ?", [event_id, club_id], (readErr, existingRows) => {
+            if (readErr) return res.status(500).json({ message: "Update failed" });
+            if (!existingRows.length) return res.status(403).json({ message: "You can only edit your own club events" });
+
+            const previousRegistrationFee = existingRows[0].registration_fee;
+            const previousPoster = existingRows[0].poster;
+
+            const runUpdate = (posterValue, callback) => {
+                const sql = posterValue == null
+                    ? `
+                        UPDATE event
+                        SET event_name=?, description=?, event_date=?, event_time=?, venue=?,
+                            max_teams=?, event_category=?, registration_fee=?, winning_amount=?,
+                            student_coordinator_name=?, student_coordinator_contact=?, faculty_coordinator_name=?
+                        WHERE event_id=? AND club_id=?
+                    `
+                    : `
+                        UPDATE event
+                        SET event_name=?, description=?, event_date=?, event_time=?, venue=?,
+                            max_teams=?, event_category=?, registration_fee=?, winning_amount=?,
+                            student_coordinator_name=?, student_coordinator_contact=?, faculty_coordinator_name=?, poster=?
+                        WHERE event_id=? AND club_id=?
+                    `;
+
+                const values = posterValue == null
+                    ? [
+                        event_name || "",
+                        description || "",
+                        event_date,
+                        event_time || "",
+                        venue,
+                        max_teams != null && max_teams !== "" ? max_teams : 0,
+                        event_category || "Others",
+                        nextRegistrationFee,
+                        winning_amount != null && winning_amount !== "" ? winning_amount : 0,
+                        student_coordinator_name || "",
+                        student_coordinator_contact || "",
+                        faculty_coordinator_name || "",
+                        event_id,
+                        club_id
+                    ]
+                    : [
+                        event_name || "",
+                        description || "",
+                        event_date,
+                        event_time || "",
+                        venue,
+                        max_teams != null && max_teams !== "" ? max_teams : 0,
+                        event_category || "Others",
+                        nextRegistrationFee,
+                        winning_amount != null && winning_amount !== "" ? winning_amount : 0,
+                        student_coordinator_name || "",
+                        student_coordinator_contact || "",
+                        faculty_coordinator_name || "",
+                        posterValue,
+                        event_id,
+                        club_id
+                    ];
+
+                db.query(sql, values, callback);
+            };
+
+            const finalize = () => {
+                syncRegistrationStatusesForFeeChange(event_id, previousRegistrationFee, nextRegistrationFee, (syncErr) => {
+                    if (syncErr) {
+                        return res.status(500).json({ message: "Event updated, but registration payment statuses could not be synchronized" });
+                    }
+                    res.json({ message: "Event updated successfully" });
+                });
+            };
+
+            if (nextPoster) {
+                const oldPosterPath = previousPoster ? path.join(postersDir, previousPoster) : null;
+                if (oldPosterPath && fs.existsSync(oldPosterPath)) {
+                    fs.unlinkSync(oldPosterPath);
                 }
-                res.json({ message: "Event updated successfully" });
-            });
+                runUpdate(nextPoster, (err) => {
+                    if (err) return res.json({ message: "Update failed" });
+                    finalize();
+                });
+            } else {
+                runUpdate(null, (err) => {
+                    if (err) return res.json({ message: "Update failed" });
+                    finalize();
+                });
+            }
         });
     });
 });
