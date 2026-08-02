@@ -42,7 +42,34 @@ function isRazorpayConfigured() {
     return !!RAZORPAY_KEY_ID && !!RAZORPAY_KEY_SECRET;
 }
 
+function hashPassword(password) {
+    const salt = crypto.randomBytes(16).toString("hex");
+    const hash = crypto.pbkdf2Sync(password, salt, 310000, 32, "sha256").toString("hex");
+    return `${salt}:${hash}`;
+}
 
+function verifyPassword(password, storedPassword) {
+    if (!password || !storedPassword) return false;
+
+    if (typeof storedPassword !== "string") return false;
+
+    if (!storedPassword.includes(":")) {
+        return password === storedPassword;
+    }
+
+    const [salt, expectedHash] = storedPassword.split(":");
+    if (!salt || !expectedHash) return false;
+
+    const derivedHash = crypto.pbkdf2Sync(password, salt, 310000, 32, "sha256").toString("hex");
+    try {
+        return crypto.timingSafeEqual(
+            Buffer.from(expectedHash, "hex"),
+            Buffer.from(derivedHash, "hex")
+        );
+    } catch {
+        return false;
+    }
+}
 
 /* REGISTER COLLEGE */
 router.post("/register-college", (req, res) => {
@@ -58,6 +85,7 @@ router.post("/register-college", (req, res) => {
     const name = String(college_name || "").trim();
     const email = String(clg_email || "").trim().toLowerCase();
     const rawPassword = String(password || "");
+    const passwordHash = hashPassword(rawPassword);
     const addr = String(address || "").trim();
     const cityName = String(city || "").trim();
     const stateName = String(state || "").trim();
@@ -80,7 +108,7 @@ router.post("/register-college", (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?)
         `;
 
-        db.query(sql, [name, email, rawPassword, addr || null, cityName || null, stateName || null], (insertErr, result) => {
+        db.query(sql, [name, email, passwordHash, addr || null, cityName || null, stateName || null], (insertErr, result) => {
             if (insertErr) {
                 return res.status(500).json({ message: "Could not register college" });
             }
@@ -114,22 +142,22 @@ router.post("/login", (req, res) => {
     let params = [];
 
     if (role === "college") {
-        query = "SELECT * FROM college WHERE clg_email = ? AND password = ?";
-        params = [username, password];
+        query = "SELECT * FROM college WHERE clg_email = ?";
+        params = [username];
     }
     else if (role === "club") {
         if (!college_id) {
             return res.status(400).json({ message: "College is required for club login" });
         }
-        query = "SELECT * FROM club WHERE college_id = ? AND (club_email = ? OR club_name = ?) AND password = ?";
-        params = [college_id, username, username, password];
+        query = "SELECT * FROM club WHERE college_id = ? AND (club_email = ? OR club_name = ?)";
+        params = [college_id, username, username];
     }
     else if (role === "student") {
         if (!college_id) {
             return res.status(400).json({ message: "College is required for student login" });
         }
-        query = "SELECT * FROM student WHERE college_id = ? AND (reg_no = ? OR email = ?) AND password = ?";
-        params = [college_id, username, username, password];
+        query = "SELECT * FROM student WHERE college_id = ? AND (reg_no = ? OR email = ?)";
+        params = [college_id, username, username];
     }
     else {
         return res.status(400).json({ message: "Invalid role" });
@@ -140,8 +168,7 @@ router.post("/login", (req, res) => {
             return res.status(500).json({ message: "Database error" });
         }
 
-        if (results.length > 0) {
-
+        if (results.length > 0 && verifyPassword(String(password || ""), results[0].password)) {
             let response = {
                 success: true,
                 role: role,
@@ -158,7 +185,6 @@ router.post("/login", (req, res) => {
             }
 
             res.json(response);
-
         } else {
             res.json({
                 success: false,
@@ -172,12 +198,13 @@ router.post("/login", (req, res) => {
 router.post("/add-club", (req, res) => {
     const { college_id, club_name, password, club_email } = req.body;
 
+    const passwordHash = hashPassword(String(password || ""));
     const sql = `
         INSERT INTO club (college_id, club_name, password, club_email)
         VALUES (?, ?, ?, ?)
     `;
 
-    db.query(sql, [college_id, club_name, password, club_email], (err) => {
+    db.query(sql, [college_id, club_name, passwordHash, club_email], (err) => {
         if (err) {
             return res.status(400).json({ message: err.message || "Error adding club" });
         }
@@ -190,12 +217,13 @@ router.post("/add-club", (req, res) => {
 router.post("/add-student", (req, res) => {
     const { college_id, reg_no, name, email, year_of_grad, password } = req.body;
 
+    const passwordHash = hashPassword(String(password || ""));
     const sql = `
         INSERT INTO student (college_id, reg_no, name, email, year_of_grad, password)
         VALUES (?, ?, ?, ?, ?, ?)
     `;
 
-    db.query(sql, [college_id, reg_no, name, email, year_of_grad, password], (err) => {
+    db.query(sql, [college_id, reg_no, name, email, year_of_grad, passwordHash], (err) => {
         if (err) {
             return res.status(400).json({ message: err.message || "Error adding student" });
         }
